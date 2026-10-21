@@ -1,49 +1,11 @@
 import { NextResponse } from "next/server";
-import { loginUsuarioSchema } from "@/modules/usuario/application/dtos/LoginUsuarioSchema";
+import { loginUsuarioSchema } from "@/modules/usuario/LoginUsuarioDTO";
 import {
   CredenciaisInvalidasError,
   UsuarioInativoError,
-} from "@/modules/usuario/application/use-cases/AutenticarUsuario";
-import { autenticarUsuario } from "@/modules/usuario/infrastructure/registrarDependenciasAutenticacao";
+} from "@/modules/auth/AutenticarUsuarioUseCase";
+import { autenticarUsuario } from "@/modules/auth/AutenticarUsuarioDependencias";
 
-/**
- * @swagger
- * /api/auth/login:
- *   post:
- *     tags:
- *       - Autenticação
- *     summary: Autenticar usuário
- *     description: Valida as credenciais e retorna um token JWT.
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - senha
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: usuario@example.com
- *               senha:
- *                 type: string
- *                 format: password
- *                 example: SenhaTeste123
- *     responses:
- *       "200":
- *         description: Login realizado com sucesso.
- *       "400":
- *         description: Dados inválidos.
- *       "401":
- *         description: Credenciais inválidas.
- *       "403":
- *         description: Usuário inativo.
- *       "500":
- *         description: Erro interno do servidor.
- */
 export async function POST(request: Request) {
   try {
     const body: unknown = await request.json();

@@ -1,7 +1,7 @@
-import { compare } from "bcryptjs";
-import type { UsuarioRepository } from "../../domain/repositories/UsuarioRepository";
-import type { LoginUsuarioDTO } from "../dtos/LoginUsuarioSchema";
-import { gerarToken } from "../../infrastructure/cryptography/TokenService";
+import { verificarSenha } from "@/lib/passwordService";
+import type { UsuarioRepository } from "../usuario/UsuarioRepository";
+import type { LoginUsuarioDTO } from "../usuario/LoginUsuarioDTO";
+import { gerarToken } from "./TokenService";
 
 export class CredenciaisInvalidasError extends Error {
   constructor() {
@@ -23,10 +23,13 @@ export interface UsuarioAutenticado {
   id: string;
   nome: string;
   email: string;
+  administrador: boolean;
+  prestador: boolean;
+  statusAprovacao: "PENDENTE" | "APROVADO" | "REJEITADO" | null;
   token: string;
 }
 
-export class AutenticarUsuario {
+export class AutenticarUsuarioUseCase {
   constructor(private readonly usuarioRepository: UsuarioRepository) {}
 
   async executar(data: LoginUsuarioDTO): Promise<UsuarioAutenticado> {
@@ -37,7 +40,7 @@ export class AutenticarUsuario {
       throw new CredenciaisInvalidasError();
     }
 
-    const senhaValida = await compare(data.senha, usuario.senhaHash);
+    const senhaValida = await verificarSenha(data.senha, usuario.senhaHash);
 
     if (!senhaValida) {
       throw new CredenciaisInvalidasError();
@@ -51,12 +54,16 @@ export class AutenticarUsuario {
       sub: usuario.id,
       nome: usuario.nome,
       email: usuario.email,
+      administrador: usuario.administrador,
     });
 
     return {
       id: usuario.id,
       nome: usuario.nome,
       email: usuario.email,
+      administrador: usuario.administrador,
+      prestador: usuario.prestador !== null,
+      statusAprovacao: usuario.prestador?.statusAprovacao ?? null,
       token,
     };
   }

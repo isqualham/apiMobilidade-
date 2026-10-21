@@ -14,12 +14,14 @@ export interface DadosToken {
   sub: string;
   nome: string;
   email: string;
+  administrador: boolean;
 }
 
 export async function gerarToken(dados: DadosToken): Promise<string> {
   return new SignJWT({
     nome: dados.nome,
     email: dados.email,
+    administrador: dados.administrador,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(dados.sub)

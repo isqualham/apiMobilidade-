@@ -12,33 +12,63 @@ enum StatusAprovacao {
   PENDENTE
   APROVADO
   REJEITADO
+
   @@map("status_aprovacao")
 }
 
 model Usuario {
-  id        String   @id @default(uuid()) @db.Uuid
-  nome      String   @db.VarChar(150)
-  email     String   @unique @db.VarChar(255)
-  telefone  String?  @db.VarChar(20)
-  senhaHash String   @map("senha_hash") @db.VarChar(255)
-  ativo     Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id            String   @id @default(uuid()) @db.Uuid
+  nome          String   @db.VarChar(150)
+  cpf           String   @unique @db.VarChar(11)
+  email         String   @unique @db.VarChar(255)
+  telefone      String?  @db.VarChar(20)
+  senhaHash     String   @map("senha_hash") @db.VarChar(255)
+  ativo         Boolean  @default(true)
+  administrador Boolean  @default(false)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  prestador Prestador?
+  prestador     Prestador?
+  aceitesTermos AceiteTermoUso[]
 
   @@map("usuario")
 }
 
 model Prestador {
-  id             String          @id @default(uuid()) @db.Uuid
-  usuarioId      String          @unique @map("usuario_id") @db.Uuid
+  id              String          @id @default(uuid()) @db.Uuid
+  usuarioId       String          @unique @map("usuario_id") @db.Uuid
   statusAprovacao StatusAprovacao @default(PENDENTE) @map("status_aprovacao")
-  dataSolicitacao DateTime       @default(now()) @map("data_solicitacao") @db.Timestamptz(3)
-  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  dataSolicitacao DateTime        @default(now()) @map("data_solicitacao") @db.Timestamptz(3)
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@map("prestador")
+}
+
+model TermoUso {
+  id        String   @id @default(uuid()) @db.Uuid
+  versao    String   @unique @db.VarChar(20)
+  conteudo  String   @db.Text
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  aceites AceiteTermoUso[]
+
+  @@map("termo_uso")
+}
+
+model AceiteTermoUso {
+  id         String   @id @default(uuid()) @db.Uuid
+  usuarioId  String   @map("usuario_id") @db.Uuid
+  termoUsoId String   @map("termo_uso_id") @db.Uuid
+  dataAceite DateTime @default(now()) @map("data_aceite") @db.Timestamptz(3)
+
+  usuario Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  termo   TermoUso @relation(fields: [termoUsoId], references: [id], onDelete: Restrict)
+
+  @@unique([usuarioId, termoUsoId])
+  @@index([usuarioId])
+  @@map("aceite_termo_uso")
 }

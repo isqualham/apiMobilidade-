@@ -4,10 +4,11 @@ export const loginUsuarioSchema = z.object({
   email: z
     .string()
     .trim()
-    .email()
+    .email("E-mail inválido.")
     .max(255)
     .transform((email) => email.toLowerCase()),
-  senha: z.string().min(1).max(72),
+
+  senha: z.string().min(8, "Informe sua senha.").max(72, "Senha inválida."),
 });
 
 export type LoginUsuarioDTO = z.infer<typeof loginUsuarioSchema>;
