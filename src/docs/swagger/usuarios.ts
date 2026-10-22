@@ -16,6 +16,7 @@
  *               - nome
  *               - cpf
  *               - email
+ *               - telefone
  *               - senha
  *               - aceitouTermos
  *             properties:
@@ -31,8 +32,9 @@
  *                 example: william@email.com
  *               telefone:
  *                 type: string
- *                 nullable: true
- *                 example: "65999999999"
+ *                 description: Telefone brasileiro obrigatório no formato internacional E.164, com código do país +55, DDD e número.
+ *                 pattern: '^\+55\d{10,11}$'
+ *                 example: "+5565999999999"
  *               senha:
  *                 type: string
  *                 format: password
@@ -45,7 +47,7 @@
  *       201:
  *         description: Usuário cadastrado com sucesso.
  *       400:
- *         description: Dados inválidos.
+ *         description: Dados inválidos, incluindo telefone ausente ou fora do formato exigido.
  *       409:
  *         description: CPF ou e-mail já cadastrado.
  *       503:

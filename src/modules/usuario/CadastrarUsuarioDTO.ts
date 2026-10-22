@@ -38,7 +38,15 @@ export const cadastrarUsuarioSchema = z.object({
     .max(255)
     .transform((email) => email.toLowerCase()),
 
-  telefone: z.string().trim().max(20).optional(),
+  telefone: z
+    .string()
+    .trim()
+    .min(1, "O telefone é obrigatório.")
+    .max(20)
+    .regex(
+      /^\+55\d{10,11}$/,
+      "Informe o telefone com +55, DDD e número. Exemplo: +5565999999999",
+    ),
 
   senha: z.string().min(8, "A senha deve ter pelo menos 8 caracteres.").max(72),
 

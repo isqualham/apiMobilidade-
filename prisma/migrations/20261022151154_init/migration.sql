@@ -8,6 +8,7 @@ CREATE TABLE "usuario" (
     "cpf" VARCHAR(11) NOT NULL,
     "email" VARCHAR(255) NOT NULL,
     "telefone" VARCHAR(20),
+    "telefone_verificado" BOOLEAN NOT NULL DEFAULT false,
     "senha_hash" VARCHAR(255) NOT NULL,
     "ativo" BOOLEAN NOT NULL DEFAULT true,
     "administrador" BOOLEAN NOT NULL DEFAULT false,

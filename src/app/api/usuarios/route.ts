@@ -130,6 +130,26 @@ export async function POST(request: Request) {
     }
 
     const repository = new PrismaUsuarioRepository();
+
+    const [cpfExiste, emailExiste] = await Promise.all([
+      repository.existePorCPF(validacao.data.cpf),
+      repository.existePorEmail(validacao.data.email),
+    ]);
+
+    if (cpfExiste || emailExiste) {
+      const erros: string[] = [];
+
+      if (cpfExiste) {
+        erros.push("Este CPF já está cadastrado.");
+      }
+
+      if (emailExiste) {
+        erros.push("Este e-mail já está cadastrado.");
+      }
+
+      return NextResponse.json({ erro: erros.join(" ") }, { status: 409 });
+    }
+
     const useCase = new CadastrarUsuarioUseCase(repository);
     const usuario = await useCase.executar(validacao.data);
 
@@ -142,11 +162,16 @@ export async function POST(request: Request) {
       );
     }
 
-    if (erro instanceof Error) {
-      if (erro.message.includes("Já existe um usuário")) {
-        return NextResponse.json({ erro: erro.message }, { status: 409 });
+    if (erro instanceof Prisma.PrismaClientKnownRequestError) {
+      if (erro.code === "P2002") {
+        return NextResponse.json(
+          { erro: "CPF ou e-mail já cadastrado." },
+          { status: 409 },
+        );
       }
+    }
 
+    if (erro instanceof Error) {
       if (erro.message.includes("Termos de Uso ativos")) {
         return NextResponse.json({ erro: erro.message }, { status: 503 });
       }
