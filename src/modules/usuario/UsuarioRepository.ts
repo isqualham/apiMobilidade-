@@ -24,6 +24,7 @@ export interface UsuarioParaAutenticacao {
   senhaHash: string;
   ativo: boolean;
   administrador: boolean;
+  telefoneVerificado: boolean;
   prestador: {
     statusAprovacao: "PENDENTE" | "APROVADO" | "REJEITADO";
   } | null;
@@ -32,6 +33,7 @@ export interface UsuarioParaAutenticacao {
 export interface UsuarioRepository {
   existePorEmail(email: string): Promise<boolean>;
   existePorCPF(cpf: string): Promise<boolean>;
+  existePorTelefone(telefone: string): Promise<boolean>;
   buscarPorEmail(email: string): Promise<UsuarioParaAutenticacao | null>;
   criarComAceiteTermo(data: CriarUsuarioData): Promise<UsuarioCriado>;
 }

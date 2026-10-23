@@ -41,10 +41,10 @@ export async function POST(request: NextRequest) {
       body === null ||
       !("codigo" in body) ||
       typeof body.codigo !== "string" ||
-      !/^\d{6}$/.test(body.codigo)
+      !/^\d{6,8}$/.test(body.codigo)
     ) {
       return NextResponse.json(
-        { erro: "O código deve conter exatamente 4 dígitos." },
+        { erro: "O código deve conter de 6 a 8 dígitos." },
         { status: 400 },
       );
     }

@@ -25,6 +25,15 @@ export class PrismaUsuarioRepository implements UsuarioRepository {
     return usuario !== null;
   }
 
+  async existePorTelefone(telefone: string): Promise<boolean> {
+    const usuario = await prisma.usuario.findUnique({
+      where: { telefone },
+      select: { id: true },
+    });
+
+    return usuario !== null;
+  }
+
   async buscarPorEmail(email: string): Promise<UsuarioParaAutenticacao | null> {
     return prisma.usuario.findUnique({
       where: { email },
@@ -35,6 +44,7 @@ export class PrismaUsuarioRepository implements UsuarioRepository {
         senhaHash: true,
         ativo: true,
         administrador: true,
+        telefoneVerificado: true,
         prestador: {
           select: {
             statusAprovacao: true,

@@ -26,6 +26,7 @@ export interface UsuarioAutenticado {
   administrador: boolean;
   prestador: boolean;
   statusAprovacao: "PENDENTE" | "APROVADO" | "REJEITADO" | null;
+  telefoneVerificado: boolean;
   token: string;
 }
 
@@ -64,6 +65,7 @@ export class AutenticarUsuarioUseCase {
       administrador: usuario.administrador,
       prestador: usuario.prestador !== null,
       statusAprovacao: usuario.prestador?.statusAprovacao ?? null,
+      telefoneVerificado: usuario.telefoneVerificado,
       token,
     };
   }

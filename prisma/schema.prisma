@@ -17,20 +17,21 @@ enum StatusAprovacao {
 }
 
 model Usuario {
-  id                  String   @id @default(uuid()) @db.Uuid
-  nome                String   @db.VarChar(150)
-  cpf                 String   @unique @db.VarChar(11)
-  email               String   @unique @db.VarChar(255)
-  telefone            String?  @db.VarChar(20)
-  telefoneVerificado  Boolean  @default(false) @map("telefone_verificado")
-  senhaHash           String   @map("senha_hash") @db.VarChar(255)
-  ativo               Boolean  @default(true)
-  administrador       Boolean  @default(false)
-  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id                 String   @id @default(uuid()) @db.Uuid
+  nome               String   @db.VarChar(150)
+  cpf                String   @unique @db.VarChar(11)
+  email              String   @unique @db.VarChar(255)
+  telefone           String?  @unique @db.VarChar(20)
+  telefoneVerificado Boolean  @default(false) @map("telefone_verificado")
+  senhaHash          String   @map("senha_hash") @db.VarChar(255)
+  ativo              Boolean  @default(true)
+  administrador      Boolean  @default(false)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  prestador     Prestador?
-  aceitesTermos AceiteTermoUso[]
+  prestador                  Prestador?
+  aceitesTermosUso           AceiteTermoUso[]
+  aceitesPoliticaPrivacidade AceitePoliticaPrivacidade[]
 
   @@map("usuario")
 }
@@ -54,10 +55,24 @@ model TermoUso {
   conteudo  String   @db.Text
   ativo     Boolean  @default(true)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   aceites AceiteTermoUso[]
 
   @@map("termo_uso")
+}
+
+model PoliticaPrivacidade {
+  id        String   @id @default(uuid()) @db.Uuid
+  versao    String   @unique @db.VarChar(20)
+  conteudo  String   @db.Text
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  aceites AceitePoliticaPrivacidade[]
+
+  @@map("politica_privacidade")
 }
 
 model AceiteTermoUso {
@@ -72,4 +87,18 @@ model AceiteTermoUso {
   @@unique([usuarioId, termoUsoId])
   @@index([usuarioId])
   @@map("aceite_termo_uso")
+}
+
+model AceitePoliticaPrivacidade {
+  id                    String   @id @default(uuid()) @db.Uuid
+  usuarioId             String   @map("usuario_id") @db.Uuid
+  politicaPrivacidadeId String   @map("politica_privacidade_id") @db.Uuid
+  dataAceite            DateTime @default(now()) @map("data_aceite") @db.Timestamptz(3)
+
+  usuario             Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  politicaPrivacidade PoliticaPrivacidade @relation(fields: [politicaPrivacidadeId], references: [id], onDelete: Restrict)
+
+  @@unique([usuarioId, politicaPrivacidadeId])
+  @@index([usuarioId])
+  @@map("aceite_politica_privacidade")
 }

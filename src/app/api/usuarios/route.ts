@@ -7,22 +7,23 @@ import {
   AcessoNegadoError,
 } from "@/modules/auth/AutenticarRequisicao";
 import { cadastrarUsuarioSchema } from "@/modules/usuario/CadastrarUsuarioDTO";
+import {
+  CadastrarUsuarioUseCase,
+  CPFJaCadastradoError,
+  EmailJaCadastradoError,
+  TelefoneJaCadastradoError,
+} from "@/modules/usuario/CadastrarUsuarioUseCase";
 import { PrismaUsuarioRepository } from "@/modules/usuario/PrismaUsuarioRepository";
-import { CadastrarUsuarioUseCase } from "@/modules/usuario/CadastrarUsuarioUseCase";
 
 export async function GET(request: Request) {
   try {
     await exigirAdministrador(request);
 
     const { searchParams } = new URL(request.url);
-
-    const paginaParam = searchParams.get("pagina") ?? "1";
-    const limiteParam = searchParams.get("limite") ?? "10";
+    const pagina = Number(searchParams.get("pagina") ?? "1");
+    const limite = Number(searchParams.get("limite") ?? "10");
     const pesquisa = searchParams.get("pesquisa")?.trim() ?? "";
     const ativoParam = searchParams.get("ativo");
-
-    const pagina = Number(paginaParam);
-    const limite = Number(limiteParam);
 
     if (
       !Number.isInteger(pagina) ||
@@ -32,9 +33,7 @@ export async function GET(request: Request) {
       limite > 100
     ) {
       return NextResponse.json(
-        {
-          erro: "Parâmetros inválidos. Informe pagina >= 1 e limite entre 1 e 100.",
-        },
+        { erro: "Informe pagina >= 1 e limite entre 1 e 100." },
         { status: 400 },
       );
     }
@@ -84,18 +83,15 @@ export async function GET(request: Request) {
       prisma.usuario.count({ where }),
     ]);
 
-    return NextResponse.json(
-      {
-        dados: usuarios,
-        paginacao: {
-          pagina,
-          limite,
-          total,
-          totalPaginas: Math.ceil(total / limite),
-        },
+    return NextResponse.json({
+      dados: usuarios,
+      paginacao: {
+        pagina,
+        limite,
+        total,
+        totalPaginas: Math.ceil(total / limite),
       },
-      { status: 200 },
-    );
+    });
   } catch (erro: unknown) {
     if (erro instanceof TokenInvalidoError) {
       return NextResponse.json({ erro: erro.message }, { status: 401 });
@@ -130,26 +126,6 @@ export async function POST(request: Request) {
     }
 
     const repository = new PrismaUsuarioRepository();
-
-    const [cpfExiste, emailExiste] = await Promise.all([
-      repository.existePorCPF(validacao.data.cpf),
-      repository.existePorEmail(validacao.data.email),
-    ]);
-
-    if (cpfExiste || emailExiste) {
-      const erros: string[] = [];
-
-      if (cpfExiste) {
-        erros.push("Este CPF já está cadastrado.");
-      }
-
-      if (emailExiste) {
-        erros.push("Este e-mail já está cadastrado.");
-      }
-
-      return NextResponse.json({ erro: erros.join(" ") }, { status: 409 });
-    }
-
     const useCase = new CadastrarUsuarioUseCase(repository);
     const usuario = await useCase.executar(validacao.data);
 
@@ -162,19 +138,52 @@ export async function POST(request: Request) {
       );
     }
 
-    if (erro instanceof Prisma.PrismaClientKnownRequestError) {
-      if (erro.code === "P2002") {
-        return NextResponse.json(
-          { erro: "CPF ou e-mail já cadastrado." },
-          { status: 409 },
-        );
-      }
+    if (
+      erro instanceof CPFJaCadastradoError ||
+      erro instanceof EmailJaCadastradoError ||
+      erro instanceof TelefoneJaCadastradoError
+    ) {
+      return NextResponse.json({ erro: erro.message }, { status: 409 });
     }
 
-    if (erro instanceof Error) {
-      if (erro.message.includes("Termos de Uso ativos")) {
-        return NextResponse.json({ erro: erro.message }, { status: 503 });
-      }
+    if (
+      erro instanceof Prisma.PrismaClientKnownRequestError &&
+      erro.code === "P2002"
+    ) {
+      const campo = erro.meta?.target;
+      const campos = Array.isArray(campo)
+        ? campo.map(String)
+        : typeof campo === "string"
+          ? [campo]
+          : [];
+
+      const mensagens = [
+        ...(campos.some((item) => item.toLowerCase().includes("cpf"))
+          ? ["Este CPF já está cadastrado."]
+          : []),
+        ...(campos.some((item) => item.toLowerCase().includes("email"))
+          ? ["Este e-mail já está cadastrado."]
+          : []),
+        ...(campos.some((item) => item.toLowerCase().includes("telefone"))
+          ? ["Este telefone já está cadastrado."]
+          : []),
+      ];
+
+      return NextResponse.json(
+        {
+          erro: mensagens.length
+            ? mensagens.join(" ")
+            : "CPF, e-mail ou telefone já cadastrado.",
+        },
+        { status: 409 },
+      );
+    }
+
+    if (
+      erro instanceof Error &&
+      erro.message.includes("Termos de Uso ativos")
+    ) {
+      return NextResponse.json({ erro: erro.message }, { status: 503 });
     }
 
     console.error("Erro ao cadastrar usuário:", erro);

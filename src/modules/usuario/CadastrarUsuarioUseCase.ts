@@ -6,7 +6,6 @@ export class EmailJaCadastradoError extends Error {
   constructor() {
     super("Este e-mail já está cadastrado.");
     this.name = "EmailJaCadastradoError";
-    Object.setPrototypeOf(this, new.target.prototype);
   }
 }
 
@@ -14,7 +13,13 @@ export class CPFJaCadastradoError extends Error {
   constructor() {
     super("Este CPF já está cadastrado.");
     this.name = "CPFJaCadastradoError";
-    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
+export class TelefoneJaCadastradoError extends Error {
+  constructor() {
+    super("Este telefone já está cadastrado.");
+    this.name = "TelefoneJaCadastradoError";
   }
 }
 
@@ -27,16 +32,19 @@ export class CadastrarUsuarioUseCase {
     const email = data.email.trim().toLowerCase();
     const telefone = data.telefone?.trim() || null;
 
-    const cpfExiste = await this.usuarioRepository.existePorCPF(cpf);
-
-    if (cpfExiste) {
+    if (await this.usuarioRepository.existePorCPF(cpf)) {
       throw new CPFJaCadastradoError();
     }
 
-    const emailExiste = await this.usuarioRepository.existePorEmail(email);
-
-    if (emailExiste) {
+    if (await this.usuarioRepository.existePorEmail(email)) {
       throw new EmailJaCadastradoError();
+    }
+
+    if (
+      telefone !== null &&
+      (await this.usuarioRepository.existePorTelefone(telefone))
+    ) {
+      throw new TelefoneJaCadastradoError();
     }
 
     const senhaHash = await gerarHashSenha(data.senha);

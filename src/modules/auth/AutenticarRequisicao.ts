@@ -50,6 +50,7 @@ export async function autenticarRequisicao(request: Request) {
       email: true,
       ativo: true,
       administrador: true,
+      telefoneVerificado: true,
       prestador: {
         select: {
           statusAprovacao: true,
@@ -67,6 +68,7 @@ export async function autenticarRequisicao(request: Request) {
     nome: usuario.nome,
     email: usuario.email,
     administrador: usuario.administrador,
+    telefoneVerificado: usuario.telefoneVerificado,
     prestador: usuario.prestador !== null,
     statusAprovacao: usuario.prestador?.statusAprovacao ?? null,
   };

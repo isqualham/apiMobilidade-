@@ -8,6 +8,7 @@ export async function GET(request: Request) {
   try {
     const usuario = await autenticarRequisicao(request);
 
+    console.log("Usuário retornado em /api/auth/me:", usuario);
     return NextResponse.json(usuario, { status: 200 });
   } catch (erro: unknown) {
     if (erro instanceof TokenInvalidoError) {

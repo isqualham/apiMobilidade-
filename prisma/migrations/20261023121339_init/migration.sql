@@ -37,8 +37,21 @@ CREATE TABLE "termo_uso" (
     "conteudo" TEXT NOT NULL,
     "ativo" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "termo_uso_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "politica_privacidade" (
+    "id" UUID NOT NULL,
+    "versao" VARCHAR(20) NOT NULL,
+    "conteudo" TEXT NOT NULL,
+    "ativo" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
+
+    CONSTRAINT "politica_privacidade_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -51,11 +64,24 @@ CREATE TABLE "aceite_termo_uso" (
     CONSTRAINT "aceite_termo_uso_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "aceite_politica_privacidade" (
+    "id" UUID NOT NULL,
+    "usuario_id" UUID NOT NULL,
+    "politica_privacidade_id" UUID NOT NULL,
+    "data_aceite" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "aceite_politica_privacidade_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "usuario_cpf_key" ON "usuario"("cpf");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "usuario_email_key" ON "usuario"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "usuario_telefone_key" ON "usuario"("telefone");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "prestador_usuario_id_key" ON "prestador"("usuario_id");
@@ -64,10 +90,19 @@ CREATE UNIQUE INDEX "prestador_usuario_id_key" ON "prestador"("usuario_id");
 CREATE UNIQUE INDEX "termo_uso_versao_key" ON "termo_uso"("versao");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "politica_privacidade_versao_key" ON "politica_privacidade"("versao");
+
+-- CreateIndex
 CREATE INDEX "aceite_termo_uso_usuario_id_idx" ON "aceite_termo_uso"("usuario_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "aceite_termo_uso_usuario_id_termo_uso_id_key" ON "aceite_termo_uso"("usuario_id", "termo_uso_id");
+
+-- CreateIndex
+CREATE INDEX "aceite_politica_privacidade_usuario_id_idx" ON "aceite_politica_privacidade"("usuario_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "aceite_politica_privacidade_usuario_id_politica_privacidade_key" ON "aceite_politica_privacidade"("usuario_id", "politica_privacidade_id");
 
 -- AddForeignKey
 ALTER TABLE "prestador" ADD CONSTRAINT "prestador_usuario_id_fkey" FOREIGN KEY ("usuario_id") REFERENCES "usuario"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -77,3 +112,9 @@ ALTER TABLE "aceite_termo_uso" ADD CONSTRAINT "aceite_termo_uso_usuario_id_fkey"
 
 -- AddForeignKey
 ALTER TABLE "aceite_termo_uso" ADD CONSTRAINT "aceite_termo_uso_termo_uso_id_fkey" FOREIGN KEY ("termo_uso_id") REFERENCES "termo_uso"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "aceite_politica_privacidade" ADD CONSTRAINT "aceite_politica_privacidade_usuario_id_fkey" FOREIGN KEY ("usuario_id") REFERENCES "usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "aceite_politica_privacidade" ADD CONSTRAINT "aceite_politica_privacidade_politica_privacidade_id_fkey" FOREIGN KEY ("politica_privacidade_id") REFERENCES "politica_privacidade"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

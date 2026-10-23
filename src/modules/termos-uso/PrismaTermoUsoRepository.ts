@@ -14,8 +14,12 @@ export class PrismaTermoUsoRepository implements TermoUsoRepository {
 
   async buscarVigente(): Promise<TermoUso | null> {
     return prisma.termoUso.findFirst({
-      where: { ativo: true },
-      orderBy: { createdAt: "desc" },
+      where: {
+        ativo: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
   }
 }
