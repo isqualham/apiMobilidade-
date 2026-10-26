@@ -25,7 +25,11 @@
  *                 example: MinhaSenha123
  *     responses:
  *       200:
- *         description: Login realizado com sucesso. Retorna os dados do usuário e o token JWT.
+ *         description: Login realizado com sucesso. JWT de 1 hora e refresh token de 7 dias. Resposta sem cache.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginSessao'
  *       400:
  *         description: Dados inválidos.
  *       401:

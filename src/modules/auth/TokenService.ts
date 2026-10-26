@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { SignJWT, jwtVerify } from "jose";
 
 function obterChaveSecreta(): Uint8Array {
@@ -12,6 +13,7 @@ function obterChaveSecreta(): Uint8Array {
 
 export interface DadosToken {
   sub: string;
+  sid?: string;
   nome: string;
   email: string;
   administrador: boolean;
@@ -19,6 +21,7 @@ export interface DadosToken {
 
 export async function gerarToken(dados: DadosToken): Promise<string> {
   return new SignJWT({
+    ...(dados.sid ? { sid: dados.sid, jti: randomUUID() } : {}),
     nome: dados.nome,
     email: dados.email,
     administrador: dados.administrador,

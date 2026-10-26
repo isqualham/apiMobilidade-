@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -8,6 +7,10 @@ datasource db {
   provider = "postgresql"
 }
 
+// ======================================================
+// ENUMS
+// ======================================================
+
 enum StatusAprovacao {
   PENDENTE
   APROVADO
@@ -16,25 +19,61 @@ enum StatusAprovacao {
   @@map("status_aprovacao")
 }
 
-model Usuario {
-  id                 String   @id @default(uuid()) @db.Uuid
-  nome               String   @db.VarChar(150)
-  cpf                String   @unique @db.VarChar(11)
-  email              String   @unique @db.VarChar(255)
-  telefone           String?  @unique @db.VarChar(20)
-  telefoneVerificado Boolean  @default(false) @map("telefone_verificado")
-  senhaHash          String   @map("senha_hash") @db.VarChar(255)
-  ativo              Boolean  @default(true)
-  administrador      Boolean  @default(false)
-  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+enum StatusCorrida {
+  SOLICITADA
+  ACEITA
+  PRESTADOR_A_CAMINHO
+  EM_ANDAMENTO
+  FINALIZADA
+  CANCELADA
+  ENCERRADA_ANTECIPADAMENTE
 
+  @@map("status_corrida")
+}
+
+enum TipoResponsavelCancelamento {
+  PASSAGEIRO
+  PRESTADOR
+  ADMINISTRADOR
+
+  @@map("tipo_responsavel_cancelamento")
+}
+
+// ======================================================
+// USUÁRIOS
+// ======================================================
+
+model Usuario {
+  id                 String  @id @default(uuid()) @db.Uuid
+  nome               String  @db.VarChar(150)
+  cpf                String  @unique @db.VarChar(11)
+  email              String  @unique @db.VarChar(255)
+  telefone           String? @unique @db.VarChar(20)
+  telefoneVerificado Boolean @default(false) @map("telefone_verificado")
+  senhaHash          String  @map("senha_hash") @db.VarChar(255)
+
+  // Foto de perfil do usuário
+  imagemUrl String? @map("imagem_url") @db.VarChar(500)
+
+  ativo         Boolean  @default(true)
+  administrador Boolean  @default(false)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  sessoes                    SessaoAuth[]
   prestador                  Prestador?
   aceitesTermosUso           AceiteTermoUso[]
   aceitesPoliticaPrivacidade AceitePoliticaPrivacidade[]
 
+  corridasComoPassageiro Corrida[]             @relation("CorridasPassageiro")
+  cancelamentos          CancelamentoCorrida[]
+
   @@map("usuario")
 }
+
+// ======================================================
+// PRESTADORES
+// ======================================================
 
 model Prestador {
   id              String          @id @default(uuid()) @db.Uuid
@@ -46,8 +85,15 @@ model Prestador {
 
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
+  veiculos Veiculo[]
+  corridas Corrida[] @relation("CorridasPrestador")
+
   @@map("prestador")
 }
+
+// ======================================================
+// TERMOS DE USO
+// ======================================================
 
 model TermoUso {
   id        String   @id @default(uuid()) @db.Uuid
@@ -62,6 +108,10 @@ model TermoUso {
   @@map("termo_uso")
 }
 
+// ======================================================
+// POLÍTICA DE PRIVACIDADE
+// ======================================================
+
 model PoliticaPrivacidade {
   id        String   @id @default(uuid()) @db.Uuid
   versao    String   @unique @db.VarChar(20)
@@ -74,6 +124,10 @@ model PoliticaPrivacidade {
 
   @@map("politica_privacidade")
 }
+
+// ======================================================
+// ACEITE DE TERMOS DE USO
+// ======================================================
 
 model AceiteTermoUso {
   id         String   @id @default(uuid()) @db.Uuid
@@ -89,6 +143,10 @@ model AceiteTermoUso {
   @@map("aceite_termo_uso")
 }
 
+// ======================================================
+// ACEITE DE POLÍTICA DE PRIVACIDADE
+// ======================================================
+
 model AceitePoliticaPrivacidade {
   id                    String   @id @default(uuid()) @db.Uuid
   usuarioId             String   @map("usuario_id") @db.Uuid
@@ -101,4 +159,234 @@ model AceitePoliticaPrivacidade {
   @@unique([usuarioId, politicaPrivacidadeId])
   @@index([usuarioId])
   @@map("aceite_politica_privacidade")
+}
+
+// ======================================================
+// TIPOS DE VEÍCULO
+// Exemplos: Moto, Carro
+// ======================================================
+
+model TipoVeiculo {
+  id        String   @id @default(uuid()) @db.Uuid
+  nome      String   @unique @db.VarChar(80)
+  descricao String?  @db.VarChar(255)
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  categorias CategoriaVeiculo[]
+
+  @@map("tipo_veiculo")
+}
+
+// ======================================================
+// CATEGORIAS DE VEÍCULO
+// Exemplos: ViaU Moto, Econômico, Conforto, Executivo
+// ======================================================
+
+model CategoriaVeiculo {
+  id            String   @id @default(uuid()) @db.Uuid
+  tipoVeiculoId String   @map("tipo_veiculo_id") @db.Uuid
+  nome          String   @unique @db.VarChar(100)
+  descricao     String?  @db.VarChar(255)
+  ativo         Boolean  @default(true)
+  ordemExibicao Int      @default(0) @map("ordem_exibicao")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tipoVeiculo TipoVeiculo @relation(fields: [tipoVeiculoId], references: [id], onDelete: Restrict)
+
+  tarifas  TarifaCategoria[]
+  veiculos Veiculo[]
+  corridas Corrida[]
+
+  @@index([tipoVeiculoId])
+  @@map("categoria_veiculo")
+}
+
+// ======================================================
+// TARIFAS POR CATEGORIA
+// ======================================================
+
+model TarifaCategoria {
+  id                 String  @id @default(uuid()) @db.Uuid
+  categoriaVeiculoId String  @unique @map("categoria_veiculo_id") @db.Uuid
+  valorKm            Decimal @map("valor_km") @db.Decimal(10, 2)
+  tarifaMinima       Decimal @map("tarifa_minima") @db.Decimal(10, 2)
+  taxaPartida        Decimal @default(0) @map("taxa_partida") @db.Decimal(10, 2)
+  ativo              Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  categoriaVeiculo CategoriaVeiculo @relation(fields: [categoriaVeiculoId], references: [id], onDelete: Restrict)
+
+  @@map("tarifa_categoria")
+}
+
+// ======================================================
+// VEÍCULOS DOS PRESTADORES
+// ======================================================
+
+model Veiculo {
+  id                 String @id @default(uuid()) @db.Uuid
+  prestadorId        String @map("prestador_id") @db.Uuid
+  categoriaVeiculoId String @map("categoria_veiculo_id") @db.Uuid
+
+  placa  String  @unique @db.VarChar(10)
+  marca  String  @db.VarChar(80)
+  modelo String  @db.VarChar(100)
+  ano    Int
+  cor    String? @db.VarChar(50)
+
+  // Foto do carro ou da moto do prestador
+  imagemUrl String? @map("imagem_url") @db.VarChar(500)
+
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  prestador        Prestador        @relation(fields: [prestadorId], references: [id], onDelete: Restrict)
+  categoriaVeiculo CategoriaVeiculo @relation(fields: [categoriaVeiculoId], references: [id], onDelete: Restrict)
+
+  corridas Corrida[]
+
+  @@index([prestadorId])
+  @@index([categoriaVeiculoId])
+  @@map("veiculo")
+}
+
+// ======================================================
+// CORRIDAS
+// ======================================================
+
+model Corrida {
+  id                 String        @id @default(uuid()) @db.Uuid
+  passageiroId       String        @map("passageiro_id") @db.Uuid
+  prestadorId        String?       @map("prestador_id") @db.Uuid
+  veiculoId          String?       @map("veiculo_id") @db.Uuid
+  categoriaVeiculoId String        @map("categoria_veiculo_id") @db.Uuid
+  status             StatusCorrida @default(SOLICITADA)
+
+  // Origem
+  origemEndereco  String  @map("origem_endereco") @db.VarChar(500)
+  origemLatitude  Decimal @map("origem_latitude") @db.Decimal(10, 7)
+  origemLongitude Decimal @map("origem_longitude") @db.Decimal(10, 7)
+
+  // Destino
+  destinoEndereco  String  @map("destino_endereco") @db.VarChar(500)
+  destinoLatitude  Decimal @map("destino_latitude") @db.Decimal(10, 7)
+  destinoLongitude Decimal @map("destino_longitude") @db.Decimal(10, 7)
+
+  // Distância e preço acordados antes da solicitação
+  distanciaKm     Decimal @map("distancia_km") @db.Decimal(10, 3)
+  valorKmAplicado Decimal @map("valor_km_aplicado") @db.Decimal(10, 2)
+  valorTotal      Decimal @map("valor_total") @db.Decimal(10, 2)
+
+  // Distância real e cobrança final
+  distanciaPercorridaKm Decimal? @map("distancia_percorrida_km") @db.Decimal(10, 3)
+  valorFinalCobrado     Decimal? @map("valor_final_cobrado") @db.Decimal(10, 2)
+
+  // Datas de acompanhamento
+  dataAceite       DateTime? @map("data_aceite") @db.Timestamptz(3)
+  dataInicio       DateTime? @map("data_inicio") @db.Timestamptz(3)
+  dataFinalizacao  DateTime? @map("data_finalizacao") @db.Timestamptz(3)
+  dataCancelamento DateTime? @map("data_cancelamento") @db.Timestamptz(3)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  passageiro       Usuario          @relation("CorridasPassageiro", fields: [passageiroId], references: [id], onDelete: Restrict)
+  prestador        Prestador?       @relation("CorridasPrestador", fields: [prestadorId], references: [id], onDelete: Restrict)
+  veiculo          Veiculo?         @relation(fields: [veiculoId], references: [id], onDelete: Restrict)
+  categoriaVeiculo CategoriaVeiculo @relation(fields: [categoriaVeiculoId], references: [id], onDelete: Restrict)
+
+  cancelamentos CancelamentoCorrida[]
+  localizacoes  LocalizacaoCorrida[]
+
+  @@index([passageiroId, createdAt])
+  @@index([prestadorId, status])
+  @@index([categoriaVeiculoId, status])
+  @@index([status, createdAt])
+  @@map("corrida")
+}
+
+// ======================================================
+// CANCELAMENTOS E ENCERRAMENTOS ANTECIPADOS
+// ======================================================
+
+model CancelamentoCorrida {
+  id        String @id @default(uuid()) @db.Uuid
+  corridaId String @map("corrida_id") @db.Uuid
+  usuarioId String @map("usuario_id") @db.Uuid
+
+  tipoResponsavel TipoResponsavelCancelamento @map("tipo_responsavel")
+
+  motivo    String  @db.VarChar(150)
+  descricao String? @db.VarChar(500)
+
+  encerramentoAntecipado Boolean @default(false) @map("encerramento_antecipado")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  corrida Corrida @relation(fields: [corridaId], references: [id], onDelete: Restrict)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@index([corridaId])
+  @@index([usuarioId])
+  @@index([tipoResponsavel, createdAt])
+  @@map("cancelamento_corrida")
+}
+
+// ======================================================
+// LOCALIZAÇÕES DURANTE A CORRIDA
+// ======================================================
+
+model LocalizacaoCorrida {
+  id        String @id @default(uuid()) @db.Uuid
+  corridaId String @map("corrida_id") @db.Uuid
+
+  latitude  Decimal @db.Decimal(10, 7)
+  longitude Decimal @db.Decimal(10, 7)
+
+  // Precisão do GPS em metros
+  precisaoMetros Decimal? @map("precisao_metros") @db.Decimal(10, 2)
+
+  // Velocidade do GPS em metros por segundo
+  velocidadeMs Decimal? @map("velocidade_ms") @db.Decimal(10, 2)
+
+  registradoEm DateTime @default(now()) @map("registrado_em") @db.Timestamptz(3)
+
+  corrida Corrida @relation(fields: [corridaId], references: [id], onDelete: Restrict)
+
+  @@index([corridaId, registradoEm])
+  @@map("localizacao_corrida")
+}
+
+// Uma sessão por login/dispositivo. Tokens antigos permanecem para detectar replay.
+model SessaoAuth {
+  id String @id @default(uuid()) @db.Uuid
+  usuarioId String @map("usuario_id") @db.Uuid
+  expiraEm DateTime @map("expira_em") @db.Timestamptz(3)
+  revogadaEm DateTime? @map("revogada_em") @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tokens RefreshToken[]
+
+  @@index([usuarioId])
+  @@map("sessao_auth")
+}
+
+model RefreshToken {
+  id String @id @default(uuid()) @db.Uuid
+  sessaoId String @map("sessao_id") @db.Uuid
+  tokenHash String @unique @map("token_hash") @db.VarChar(64)
+  expiraEm DateTime @map("expira_em") @db.Timestamptz(3)
+  usadoEm DateTime? @map("usado_em") @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  sessao SessaoAuth @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+
+  @@index([sessaoId])
+  @@map("refresh_token")
 }

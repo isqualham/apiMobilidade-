@@ -1,7 +1,7 @@
 import { verificarSenha } from "@/lib/passwordService";
 import type { UsuarioRepository } from "../usuario/UsuarioRepository";
 import type { LoginUsuarioDTO } from "../usuario/LoginUsuarioDTO";
-import { gerarToken } from "./TokenService";
+import type { SessaoUseCase } from "./SessaoUseCase";
 
 export class CredenciaisInvalidasError extends Error {
   constructor() {
@@ -28,10 +28,11 @@ export interface UsuarioAutenticado {
   statusAprovacao: "PENDENTE" | "APROVADO" | "REJEITADO" | null;
   telefoneVerificado: boolean;
   token: string;
+  refreshToken: string;
 }
 
 export class AutenticarUsuarioUseCase {
-  constructor(private readonly usuarioRepository: UsuarioRepository) {}
+  constructor(private readonly usuarioRepository: UsuarioRepository, private readonly sessoes: SessaoUseCase) {}
 
   async executar(data: LoginUsuarioDTO): Promise<UsuarioAutenticado> {
     const email = data.email.trim().toLowerCase();
@@ -51,12 +52,7 @@ export class AutenticarUsuarioUseCase {
       throw new UsuarioInativoError();
     }
 
-    const token = await gerarToken({
-      sub: usuario.id,
-      nome: usuario.nome,
-      email: usuario.email,
-      administrador: usuario.administrador,
-    });
+    const tokens = await this.sessoes.criar(usuario);
 
     return {
       id: usuario.id,
@@ -66,7 +62,7 @@ export class AutenticarUsuarioUseCase {
       prestador: usuario.prestador !== null,
       statusAprovacao: usuario.prestador?.statusAprovacao ?? null,
       telefoneVerificado: usuario.telefoneVerificado,
-      token,
+      ...tokens,
     };
   }
 }

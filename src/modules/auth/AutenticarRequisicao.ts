@@ -42,6 +42,17 @@ export async function autenticarRequisicao(request: Request) {
     throw new TokenInvalidoError();
   }
 
+  // JWTs anteriores à implantação continuam válidos até sua expiração original.
+  if (payload.sid !== undefined) {
+    if (typeof payload.sid !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(payload.sid)) {
+      throw new TokenInvalidoError();
+    }
+    const sessao = await prisma.sessaoAuth.findFirst({ where: {
+      id: payload.sid, usuarioId: payload.sub, revogadaEm: null, expiraEm: { gt: new Date() },
+    }, select: { id: true } });
+    if (!sessao) throw new TokenInvalidoError();
+  }
+
   const usuario = await prisma.usuario.findUnique({
     where: { id: payload.sub },
     select: {

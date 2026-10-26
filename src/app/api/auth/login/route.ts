@@ -1,3 +1,4 @@
+import { headersSessao } from "@/modules/auth/SessaoHttp";
 import { NextResponse } from "next/server";
 import { loginUsuarioSchema } from "@/modules/usuario/LoginUsuarioDTO";
 import {
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
 
     const resultado = await autenticarUsuario.executar(validacao.data);
 
-    return NextResponse.json(resultado, { status: 200 });
+    return NextResponse.json(resultado, { status: 200, headers: headersSessao });
   } catch (erro: unknown) {
     if (erro instanceof CredenciaisInvalidasError) {
       return NextResponse.json({ erro: erro.message }, { status: 401 });
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ erro: erro.message }, { status: 403 });
     }
 
-    console.error("Erro ao autenticar usuário:", erro);
+    // Não registrar exceções que possam conter credenciais.
 
     return NextResponse.json(
       { erro: "Não foi possível realizar o login." },
