@@ -317,7 +317,7 @@
  *     tags:
  *       - Corridas
  *     summary: Ofertas disponíveis para um veículo próprio
- *     description: "Exige usuário ativo, prestador APROVADO e livre, veículo próprio
+ *     description: "Exige usuário ativo, prestador APROVADO, ONLINE com o veiculoId informado e livre, veículo próprio
  *       ativo, categoria e tipo ativos. Apenas SOLICITADA sem prestador, de outro
  *       passageiro ativo e categoria compatível. Origem/destino aproximados a duas
  *       casas decimais, sem endereço ou identidade. Ordem createdAt ASC, id ASC. A

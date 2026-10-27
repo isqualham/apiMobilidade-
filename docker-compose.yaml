@@ -4,28 +4,24 @@ services:
     image: apimobilidade
     container_name: apimobilidade
     working_dir: /api
+
     volumes:
       - .:/api
+      - node_modules:/api/node_modules
+      - next_cache:/api/.next
+
     ports:
       - "3000:3000"
-    command: npm run dev -- --hostname 0.0.0.0
-    depends_on:
-      - db
-    networks:
-      - my-network
 
-  db:
-    image: postgis/postgis:17-3.5
-    container_name: apimobilidade-db
-    platform: linux/amd64
+    env_file:
+      - .env
+
     environment:
-      POSTGRES_USER: mobilidade
-      POSTGRES_PASSWORD: mobilidade_dev_2026
-      POSTGRES_DB: mobilidade_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      NODE_ENV: ${NODE_ENV:-development}
+      VIAU_ENVIRONMENT: ${VIAU_ENVIRONMENT:-development}
+
+    command: npm run dev -- --hostname 0.0.0.0
+
     networks:
       - my-network
 
@@ -34,4 +30,5 @@ networks:
     external: true
 
 volumes:
-  postgres_data:
+  node_modules:
+  next_cache:

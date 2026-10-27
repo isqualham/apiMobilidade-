@@ -79,6 +79,9 @@ model Prestador {
   id              String          @id @default(uuid()) @db.Uuid
   usuarioId       String          @unique @map("usuario_id") @db.Uuid
   statusAprovacao StatusAprovacao @default(PENDENTE) @map("status_aprovacao")
+  veiculoOnlineId String? @map("veiculo_online_id") @db.Uuid
+  disponibilidadeVersao Int @default(0) @map("disponibilidade_versao")
+  veiculoOnline Veiculo? @relation("VeiculoOnline", fields: [veiculoOnlineId], references: [id], onDelete: Restrict)
   dataSolicitacao DateTime        @default(now()) @map("data_solicitacao") @db.Timestamptz(3)
   createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -229,6 +232,7 @@ model TarifaCategoria {
 // ======================================================
 
 model Veiculo {
+  prestadoresOnline Prestador[] @relation("VeiculoOnline")
   id                 String @id @default(uuid()) @db.Uuid
   prestadorId        String @map("prestador_id") @db.Uuid
   categoriaVeiculoId String @map("categoria_veiculo_id") @db.Uuid

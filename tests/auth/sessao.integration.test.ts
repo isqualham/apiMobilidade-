@@ -200,3 +200,25 @@ it("JWT assinado com sessão de outro usuário ou sid inválido é recusado", as
   const malformado = await gerarToken({ ...usuario, sub: usuario.id, sid: "invalido" });
   await expect(protegida(malformado)).rejects.toThrow("Token ausente ou inválido.");
 });
+
+it("login por telefone exato mantém identidade, permissões e renovação", async () => {
+  const telefone = "+5565990000001";
+  await banco.usuario.update({ where: { id: usuario.id }, data: { telefone } });
+  const resposta = await login(request({ telefone, senha }));
+  expect(resposta.status).toBe(200);
+  const corpo = await resposta.json();
+  expect(corpo).toMatchObject({ id: usuario.id, email: usuario.email, administrador: false, prestador: false });
+  expect(resposta.headers.get("Cache-Control")).toBe("no-store");
+  expect(await protegida(corpo.token)).toMatchObject({ id: usuario.id });
+  const renovada = await refresh(request({ refreshToken: corpo.refreshToken }));
+  expect(renovada.status).toBe(200);
+  expect(await verificarToken((await renovada.json()).token)).toMatchObject({ sub: usuario.id });
+  const sessoesAntes = await banco.sessaoAuth.count();
+  expect((await login(request({ telefone, senha: "senhaErrada123" }))).status).toBe(401);
+  expect((await login(request({ telefone: "+5565990000099", senha }))).status).toBe(401);
+  expect((await login(request({ telefone: "65990000001", senha }))).status).toBe(400);
+  expect((await login(request({ telefone, email: usuario.email, senha }))).status).toBe(400);
+  await banco.usuario.update({ where: { id: usuario.id }, data: { ativo: false } });
+  expect((await login(request({ telefone, senha }))).status).toBe(403);
+  expect(await banco.sessaoAuth.count()).toBe(sessoesAntes);
+});

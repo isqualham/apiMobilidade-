@@ -1,3 +1,4 @@
+import { PrismaDisponibilidadePrestadorRepository } from "@/modules/prestador/PrismaDisponibilidadePrestadorRepository";
 import { PrismaCorridaConsultaRepository } from "@/modules/corrida/PrismaCorridaConsultaRepository";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
@@ -58,6 +59,7 @@ async function motorista(statusAprovacao: "APROVADO" | "PENDENTE" | "REJEITADO" 
   const entrada = await dados();
   const prestador = await banco.prestador.create({ data: { usuarioId: entrada.passageiroId, statusAprovacao } });
   const veiculo = await banco.veiculo.create({ data: { prestadorId: prestador.id, categoriaVeiculoId, placa: String(contador), marca: "Teste", modelo: "Teste", ano: 2026 } });
+  if (statusAprovacao === "APROVADO") await new PrismaDisponibilidadePrestadorRepository(banco).alterar(entrada.passageiroId, { status: "ONLINE", veiculoId: veiculo.id, versao: 0 });
   return { usuarioId: entrada.passageiroId, prestadorId: prestador.id, veiculoId: veiculo.id };
 }
 async function corrida(status: StatusCorrida = "SOLICITADA", usuarioId?: string) {

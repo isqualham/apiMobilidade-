@@ -1,3 +1,4 @@
+import { conflitoDisponibilidade } from "@/modules/prestador/ConflitoDisponibilidade";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 
@@ -144,7 +145,7 @@ export class PrismaCorridaRepository implements CorridaRepository {
             statusAprovacao: "APROVADO",
             usuario: { ativo: true },
           },
-          select: { id: true },
+          select: { id: true, veiculoOnlineId: true },
         });
 
         if (!prestador) {
@@ -152,6 +153,10 @@ export class PrismaCorridaRepository implements CorridaRepository {
             "Prestador não encontrado ou não aprovado.",
             403,
           );
+        }
+
+        if (prestador.veiculoOnlineId !== dados.veiculoId) {
+          throw new CorridaError("Fique Online com o veículo informado para aceitar ofertas.", 403);
         }
 
         const veiculo = await tx.veiculo.findFirst({
@@ -234,7 +239,10 @@ export class PrismaCorridaRepository implements CorridaRepository {
         return converter(corrida);
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-    );
+    ).catch(erro => {
+      if (conflitoDisponibilidade(erro)) throw new CorridaError("Conflito ao aceitar corrida ou alterar disponibilidade. Consulte novamente.", 409);
+      throw erro;
+    });
   }
 
   async iniciar(

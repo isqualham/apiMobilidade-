@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "seed:dev": "vite-node --config vitest.config.ts scripts/seed.ts",
+    "migrate:production": "node scripts/migrate-production.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",

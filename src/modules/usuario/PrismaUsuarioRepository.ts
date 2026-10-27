@@ -35,8 +35,16 @@ export class PrismaUsuarioRepository implements UsuarioRepository {
   }
 
   async buscarPorEmail(email: string): Promise<UsuarioParaAutenticacao | null> {
+    return this.buscarParaAutenticacao({ email });
+  }
+
+  async buscarPorTelefone(telefone: string): Promise<UsuarioParaAutenticacao | null> {
+    return this.buscarParaAutenticacao({ telefone });
+  }
+
+  private buscarParaAutenticacao(where: { email: string } | { telefone: string }): Promise<UsuarioParaAutenticacao | null> {
     return prisma.usuario.findUnique({
-      where: { email },
+      where,
       select: {
         id: true,
         nome: true,

@@ -4,7 +4,7 @@
  *   post:
  *     tags:
  *       - Autenticação
- *     summary: Realizar login
+ *     summary: Realizar login por e-mail ou telefone
  *     requestBody:
  *       required: true
  *       content:
@@ -12,15 +12,24 @@
  *           schema:
  *             type: object
  *             required:
- *               - email
  *               - senha
+ *             oneOf:
+ *               - required: [email]
+ *               - required: [telefone]
+ *             description: Informe exatamente um identificador. Telefone E.164 é consultado sem adicionar código de país; e-mail mantém normalização de espaços e caixa.
  *             properties:
  *               email:
  *                 type: string
  *                 format: email
  *                 example: william@email.com
+ *               telefone:
+ *                 type: string
+ *                 pattern: '^\+[1-9]\d{1,14}$'
+ *                 example: '+5565990000001'
  *               senha:
  *                 type: string
+ *                 minLength: 8
+ *                 maxLength: 72
  *                 format: password
  *                 example: MinhaSenha123
  *     responses:

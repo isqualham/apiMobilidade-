@@ -214,7 +214,7 @@
  *   post:
  *     tags: [Corridas]
  *     summary: Aceitar uma corrida
- *     description: Permite que um prestador aprovado aceite uma corrida solicitada, utilizando um veículo ativo e compatível.
+ *     description: Exige prestador aprovado, ONLINE com o mesmo veiculoId enviado, livre e veículo próprio ativo e compatível. Offline ou veículo diferente retorna 403; conflito concorrente com mudança de disponibilidade retorna 409.
  *     security:
  *       - bearerAuth: []
  *     parameters:

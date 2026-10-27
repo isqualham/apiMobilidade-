@@ -1,3 +1,4 @@
+import { PrismaDisponibilidadePrestadorRepository } from "@/modules/prestador/PrismaDisponibilidadePrestadorRepository";
 import { PrismaPrestadorRepository } from "@/modules/prestador/PrismaPrestadorRepository";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
@@ -133,6 +134,7 @@ describe("Aprovação no PostgreSQL isolado", () => {
     const aceite = { corridaId: corrida.id, usuarioId: prestador.usuarioId, veiculoId: veiculo.id };
     await expect(repository.aceitar(aceite)).rejects.toMatchObject({ statusCode: 403 });
     await aprovacao.decidirAprovacao({ prestadorId: prestador.id, administradorId, statusAprovacao: "APROVADO" });
+    await new PrismaDisponibilidadePrestadorRepository(banco).alterar(prestador.usuarioId, { status: "ONLINE", veiculoId: veiculo.id, versao: 0 });
     expect((await repository.aceitar(aceite)).status).toBe("ACEITA");
   });
 });

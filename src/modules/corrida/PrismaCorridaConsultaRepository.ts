@@ -74,7 +74,7 @@ export class PrismaCorridaConsultaRepository implements CorridaConsultaRepositor
       const prestador = await tx.prestador.findFirst({
         where: { usuarioId, statusAprovacao: "APROVADO", usuario: { ativo: true } },
         select: {
-          id: true,
+          id: true, veiculoOnlineId: true,
           veiculos: {
             where: { id: consulta.veiculoId, ativo: true, categoriaVeiculo: { ativo: true, tipoVeiculo: { ativo: true } } },
             select: { categoriaVeiculoId: true }, take: 1,
@@ -83,6 +83,7 @@ export class PrismaCorridaConsultaRepository implements CorridaConsultaRepositor
         },
       });
       if (!prestador) throw new CorridaError("Somente prestadores ativos e aprovados podem consultar ofertas.", 403);
+      if (prestador.veiculoOnlineId !== consulta.veiculoId) throw new CorridaError("Fique Online com o veículo informado para consultar ofertas.", 403);
       const veiculo = prestador.veiculos[0];
       if (!veiculo) throw new CorridaError("Veículo próprio, ativo e de categoria ativa é obrigatório.", 403);
       if (prestador.corridas.length) throw new CorridaError("Prestador já possui uma corrida ativa.", 409);

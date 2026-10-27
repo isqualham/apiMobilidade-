@@ -34,6 +34,7 @@ export interface UsuarioRepository {
   existePorEmail(email: string): Promise<boolean>;
   existePorCPF(cpf: string): Promise<boolean>;
   existePorTelefone(telefone: string): Promise<boolean>;
+  buscarPorTelefone(telefone: string): Promise<UsuarioParaAutenticacao | null>;
   buscarPorEmail(email: string): Promise<UsuarioParaAutenticacao | null>;
   criarComAceiteTermo(data: CriarUsuarioData): Promise<UsuarioCriado>;
 }

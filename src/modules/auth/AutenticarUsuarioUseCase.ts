@@ -5,7 +5,7 @@ import type { SessaoUseCase } from "./SessaoUseCase";
 
 export class CredenciaisInvalidasError extends Error {
   constructor() {
-    super("E-mail ou senha inválidos.");
+    super("E-mail, telefone ou senha inválidos.");
     this.name = "CredenciaisInvalidasError";
     Object.setPrototypeOf(this, new.target.prototype);
   }
@@ -35,8 +35,11 @@ export class AutenticarUsuarioUseCase {
   constructor(private readonly usuarioRepository: UsuarioRepository, private readonly sessoes: SessaoUseCase) {}
 
   async executar(data: LoginUsuarioDTO): Promise<UsuarioAutenticado> {
-    const email = data.email.trim().toLowerCase();
-    const usuario = await this.usuarioRepository.buscarPorEmail(email);
+    const usuario = data.email !== undefined
+      ? await this.usuarioRepository.buscarPorEmail(data.email.trim().toLowerCase())
+      : data.telefone !== undefined
+        ? await this.usuarioRepository.buscarPorTelefone(data.telefone)
+        : null;
 
     if (!usuario) {
       throw new CredenciaisInvalidasError();
