@@ -317,8 +317,8 @@
  *     tags:
  *       - Corridas
  *     summary: Ofertas disponíveis para um veículo próprio
- *     description: "Exige usuário ativo, prestador APROVADO, ONLINE com o veiculoId informado e livre, veículo próprio
- *       ativo, categoria e tipo ativos. Apenas SOLICITADA sem prestador, de outro
+ *     description: "Exige usuário ativo, prestador APROVADO, ONLINE com o veículo selecionado e livre, veículo próprio APROVADO
+ *       e ativo, categoria e tipo ativos. Exclui ofertas recusadas por este prestador. Apenas SOLICITADA sem prestador, de outro
  *       passageiro ativo e categoria compatível. Origem/destino aproximados a duas
  *       casas decimais, sem endereço ou identidade. Ordem createdAt ASC, id ASC. A
  *       consulta não reserva a corrida. Respostas privadas com Cache-Control:
@@ -345,8 +345,8 @@
  *           maxLength: 256
  *       - in: query
  *         name: veiculoId
- *         required: true
- *         description: Veículo com que o prestador pretende aceitar.
+ *         required: false
+ *         description: Opcional; usa o veículo Online no servidor. Se informado, deve coincidir com a seleção.
  *         schema:
  *           type: string
  *           format: uuid

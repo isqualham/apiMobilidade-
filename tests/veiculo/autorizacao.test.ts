@@ -9,7 +9,7 @@ import { swaggerSpec } from "@/lib/swagger";
 import { gerarToken } from "@/modules/auth/TokenService";
 import { PrismaVeiculoRepository } from "@/modules/veiculo/PrismaVeiculoRepository";
 
-vi.mock("@/lib/prisma", () => ({ prisma: {
+vi.mock("@/lib/prisma", () => ({ prisma: { sessaoAuth: { findFirst: vi.fn() },
   usuario: { findUnique: vi.fn() },
   prestador: { findUnique: vi.fn() },
   veiculo: { findMany: vi.fn(), create: vi.fn() },
@@ -25,6 +25,9 @@ const usuario = {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(prisma.sessaoAuth.findFirst).mockResolvedValue({
+    revogadaEm: null, motivoRevogacao: null, expiraEm: new Date(Date.now() + 86400000),
+  } as never);
   vi.stubEnv("JWT_SECRET", randomBytes(32).toString("hex"));
   vi.mocked(prisma.usuario.findUnique).mockResolvedValue(usuario as never);
   vi.mocked(prisma.prestador.findUnique).mockResolvedValue({ id: prestadorId, statusAprovacao: "APROVADO" } as never);
@@ -38,7 +41,7 @@ function request(token?: string, method = "GET") {
   });
 }
 function tokenValido() {
-  return gerarToken({ sub: usuarioId, nome: usuario.nome, email: usuario.email, administrador: false });
+  return gerarToken({ sid: "00000000-0000-4000-8000-000000000099", sub: usuarioId, nome: usuario.nome, email: usuario.email, administrador: false });
 }
 
 it.each(["ausente", "vazio", "invalido", "expirado", "assinatura incorreta"])(
@@ -133,7 +136,7 @@ it("POST preserva cadastro 201 com identidade do banco e normalização", async 
     mensagem: "Veículo cadastrado com sucesso.", veiculo: { ...dadosVeiculo, prestadorId, placa: "ABC1D23" },
   });
   expect(prisma.veiculo.create).toHaveBeenCalledWith({ data: {
-    ...dadosVeiculo, prestadorId, placa: "ABC1D23", cor: null, imagemUrl: null, ativo: true,
+    ...dadosVeiculo, prestadorId, placa: "ABC1D23", cor: null, imagemUrl: null, ativo: true, statusAprovacao: "PENDENTE",
   } });
 });
 

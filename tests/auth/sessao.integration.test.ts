@@ -148,9 +148,9 @@ it("logout concorrente com refresh nunca deixa sessão utilizável", async () =>
   }
   await expect(protegida(tokens.token)).rejects.toThrow();
 });
-it("JWT legado continua válido; expirado continua rejeitado", async () => {
+it("JWT legado sem sessão exige novo login", async () => {
   const token = await gerarToken({ ...usuario, sub: usuario.id });
-  expect(await protegida(token)).toMatchObject({ id: usuario.id });
+  await expect(protegida(token)).rejects.toThrow("Token ausente ou inválido.");
 });
 it("token desconhecido retorna 401 sem criar sessão; logout desconhecido é idempotente", async () => {
   const body = { refreshToken: randomBytes(32).toString("base64url") };
@@ -221,4 +221,33 @@ it("login por telefone exato mantém identidade, permissões e renovação", asy
   await banco.usuario.update({ where: { id: usuario.id }, data: { ativo: false } });
   expect((await login(request({ telefone, senha }))).status).toBe(403);
   expect(await banco.sessaoAuth.count()).toBe(sessoesAntes);
+});
+
+
+it.each([false, true])("sessão vigente bloqueia novo login; logout libera (prestador=%s)", async prestador => {
+  if (prestador) await banco.prestador.create({ data: { usuarioId: usuario.id, statusAprovacao: "APROVADO" } });
+  const a = await entrar();
+  const antes = await banco.sessaoAuth.findMany({ where: { usuarioId: usuario.id } });
+  const b = await login(request({ email: usuario.email, senha }));
+  expect(b.status).toBe(409);
+  expect(await b.json()).toMatchObject({ codigo: "SESSAO_ATIVA_EXISTENTE" });
+  expect(await banco.sessaoAuth.findMany({ where: { usuarioId: usuario.id } })).toEqual(antes);
+  expect(await protegida(a.token)).toMatchObject({ id: usuario.id });
+  const renovacao = await refresh(request({ refreshToken: a.refreshToken }));
+  expect(renovacao.status).toBe(200);
+  await logout(request({ refreshToken: (await renovacao.json()).refreshToken }));
+  const novo = await entrar();
+  expect(await protegida(novo.token)).toMatchObject({ id: usuario.id });
+});
+it("logins concorrentes: um sucesso e dois conflitos", async () => {
+  const respostas = await Promise.all([1, 2, 3].map(() => login(request({ email: usuario.email, senha }))));
+  expect(respostas.map(r => r.status).sort()).toEqual([200, 409, 409]);
+  expect(await banco.sessaoAuth.count({ where: { usuarioId: usuario.id, revogadaEm: null } })).toBe(1);
+});
+it("sessão expirada não bloqueia novo login nem pode renovar", async () => {
+  const antiga = await entrar();
+  await banco.sessaoAuth.updateMany({ where: { usuarioId: usuario.id }, data: { expiraEm: new Date(0) } });
+  const nova = await entrar();
+  expect((await refresh(request({ refreshToken: antiga.refreshToken }))).status).toBe(401);
+  expect(await protegida(nova.token)).toMatchObject({ id: usuario.id });
 });

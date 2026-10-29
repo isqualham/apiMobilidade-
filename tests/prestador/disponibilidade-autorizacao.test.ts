@@ -6,15 +6,18 @@ import { gerarToken } from "@/modules/auth/TokenService";
 import { PrismaDisponibilidadePrestadorRepository } from "@/modules/prestador/PrismaDisponibilidadePrestadorRepository";
 import { PrestadorError } from "@/modules/prestador/AtualizarAprovacaoPrestadorDTO";
 import { GET, PATCH } from "@/app/api/prestadores/disponibilidade/route";
-vi.mock("@/lib/prisma", () => ({ prisma: { usuario: { findUnique: vi.fn() } } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { sessaoAuth: { findFirst: vi.fn() }, usuario: { findUnique: vi.fn() } } }));
 const id = "00000000-0000-4000-8000-000000000001";
 const estado = { status: "OFFLINE" as const, veiculoId: null, versao: 0 };
 beforeEach(() => {
+  vi.mocked(prisma.sessaoAuth.findFirst).mockResolvedValue({
+    revogadaEm: null, motivoRevogacao: null, expiraEm: new Date(Date.now() + 86400000),
+  } as never);
   vi.stubEnv("JWT_SECRET", randomBytes(32).toString("hex"));
   vi.mocked(prisma.usuario.findUnique).mockResolvedValue({ id, ativo: true } as never);
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
-const token = () => gerarToken({ sub: id, nome: "Teste", email: "teste@test.invalid", administrador: false });
+const token = () => gerarToken({ sid: "00000000-0000-4000-8000-000000000099", sub: id, nome: "Teste", email: "teste@test.invalid", administrador: false });
 function req(bearer?: string, corpo = JSON.stringify({ status: "OFFLINE", versao: 0 })) {
   return new Request("http://localhost/api/prestadores/disponibilidade", { method: "PATCH", headers: bearer ? { Authorization: `Bearer ${bearer}` } : {}, body: corpo });
 }

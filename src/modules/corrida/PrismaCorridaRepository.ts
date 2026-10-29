@@ -159,11 +159,16 @@ export class PrismaCorridaRepository implements CorridaRepository {
           throw new CorridaError("Fique Online com o veículo informado para aceitar ofertas.", 403);
         }
 
+        if (await tx.recusaOferta.findUnique({ where: { prestadorId_corridaId: { prestadorId: prestador.id, corridaId: dados.corridaId } } })) {
+          throw new CorridaError("Oferta já recusada por este prestador.", 409);
+        }
+
         const veiculo = await tx.veiculo.findFirst({
           where: {
             id: dados.veiculoId,
             prestadorId: prestador.id,
             ativo: true,
+            statusAprovacao: "APROVADO",
             categoriaVeiculo: {
               ativo: true,
               tipoVeiculo: { ativo: true },
@@ -173,7 +178,7 @@ export class PrismaCorridaRepository implements CorridaRepository {
 
         if (!veiculo) {
           throw new CorridaError(
-            "Veículo não pertence ao prestador ou está inativo.",
+            "Veículo não pertence ao prestador, não está aprovado ou está inativo.",
             403,
           );
         }

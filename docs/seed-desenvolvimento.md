@@ -26,11 +26,11 @@ Os UUIDs, CPFs e telefones estáveis estão em `scripts/seed/dados.ts`. São reg
 | Motorista | Categoria padrão | Veículo | Ano | Cor | Placa |
 | --- | --- | --- | --- | --- | --- |
 | motorista1 | Moto / tipo Moto | Honda CG 160 | 2024 | Preta | VUT1A01 |
-| motorista2 | Econômico / tipo Carro | Fiat Argo | 2024 | Prata | VUT2A02 |
+| motorista2 | Carro Econômico / tipo Carro | Fiat Argo | 2024 | Prata | VUT2A02 |
 
-São preparadas ViaU Moto, ViaU Econômico, ViaU Conforto e ViaU Executivo. Categorias antigas Moto, Econômico (ou Carro Econômico), Conforto e Executivo são reconhecidas sem distinguir acentos, caixa ou espaços; somente o nome é padronizado, preservando IDs, estado, descrição e relacionamentos. Duplicidades equivalentes interrompem a transação: não há fusão automática.
+São preparadas Moto, Carro Econômico, Carro Premium e Carro Porta-Malas Grande. Categorias antigas Moto, Econômico, Conforto e Executivo (inclusive com prefixo ViaU) são reconhecidas sem distinguir acentos, caixa ou espaços; somente o nome é padronizado, preservando IDs, estado, descrição e relacionamentos. Duplicidades equivalentes interrompem a transação: não há fusão automática.
 
-Novas Moto e Econômico ficam ativas e recebem os dois veículos acima. Novas Conforto e Executivo ficam **inativas**, embora suas tarifas sejam preparadas, pois não há veículos de teste nem homologação definida para elas. Categorias existentes mantêm seu estado; Moto/Econômico inativas bloqueiam a seed. Tipos incompatíveis/inativos e IDs reservados ocupados também bloqueiam.
+Novas Moto e Carro Econômico ficam ativas e recebem os dois veículos acima. Novas Carro Premium e Carro Porta-Malas Grande ficam **inativas**, embora suas tarifas sejam preparadas, pois não há veículos de teste nem homologação definida para elas. Categorias existentes mantêm seu estado; Moto/Econômico inativas bloqueiam a seed. Tipos incompatíveis/inativos e IDs reservados ocupados também bloqueiam.
 
 Para categorias equivalentes com nomes customizados, informar IDs auditados em `VIAU_SEED_MOTO_ID`, `VIAU_SEED_ECONOMICO_ID`, `VIAU_SEED_CONFORTO_ID` e `VIAU_SEED_EXECUTIVO_ID`. Esses nomes customizados são preservados; IDs informados devem existir e não podem conflitar com aliases encontrados. IDs novos estáveis constam em `scripts/seed/dados.ts`; IDs existentes sempre prevalecem.
 
@@ -40,10 +40,10 @@ Criadas somente quando a categoria não possui tarifa:
 
 | Categoria | Valor/km | Taxa de partida | Tarifa mínima |
 | --- | --- | --- | --- |
-| ViaU Moto | R$ 1,80 | R$ 3,00 | R$ 7,00 |
-| ViaU Econômico | R$ 2,50 | R$ 5,00 | R$ 10,00 |
-| ViaU Conforto | R$ 3,50 | R$ 7,00 | R$ 15,00 |
-| ViaU Executivo | R$ 4,50 | R$ 10,00 | R$ 20,00 |
+| Moto | R$ 1,80 | R$ 3,00 | R$ 7,00 |
+| Carro Econômico | R$ 2,50 | R$ 5,00 | R$ 10,00 |
+| Carro Premium | R$ 3,50 | R$ 7,00 | R$ 15,00 |
+| Carro Porta-Malas Grande | R$ 4,50 | R$ 10,00 | R$ 20,00 |
 
 Valores persistidos como strings decimais em Decimal(10,2). Fórmula existente preservada: `max(tarifaMinima, taxaPartida + distanciaKm * valorKm)`, com Decimal e arredondamento HALF_UP para duas casas, limite R$ 99.999.999,99. Em 1 km aplicam-se as mínimas; em 10 km os totais são R$ 21,00 / 30,00 / 42,00 / 55,00. Distância vem do serviço de rotas no backend, nunca de um preço ou estimativa enviados pelo aplicativo. A seed não chama OSRM nem cria corridas.
 
@@ -126,3 +126,9 @@ Os testes usam schemas exclusivos num PostgreSQL descartável, migrations versio
 
 
 Para testar viagens reais após executar a seed, usar login, categorias, veículos e os endpoints de corrida existentes. OSRM e JWT_SECRET precisam estar configurados. O teste de fluxo completo usa PostgreSQL, repositórios, caso de uso de solicitação e adaptador HTTP OSRM reais; somente a resposta do provedor externo é uma fixture HTTP local. Isso valida persistência, cálculo, aceite, início e finalização, mas não valida um trajeto geográfico real no serviço público.
+
+## Aprovação individual de veículos
+
+Com a aprovação individual implementada, os veículos criados pela seed ficam PENDENTES por padrão e não podem operar até uma decisão administrativa explícita. A seed não altera aprovação de veículos existentes. Os prestadores continuam aprovados, mas isso não aprova seus veículos. Veja [aprovação de veículos](aprovacao-veiculos.md).
+
+A renomeação de registros já existentes em ambiente remoto deve usar o [SQL manual de nomes](categorias-nomes.md), sem executar a seed completa. Os perfis internos conforto/executivo permanecem iguais para preservar tarifas e configurações.

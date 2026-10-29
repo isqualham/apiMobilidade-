@@ -129,7 +129,7 @@ describe("Aprovação no PostgreSQL isolado", () => {
   });
   it("aprovar habilita o aceite de corrida com veículo compatível", async () => {
     const prestador = await novoPrestador();
-    const veiculo = await banco.veiculo.create({ data: { prestadorId: prestador.id, categoriaVeiculoId, placa: "TEST001", marca: "Teste", modelo: "Teste", ano: 2026 } });
+    const veiculo = await banco.veiculo.create({ data: { statusAprovacao: "APROVADO", prestadorId: prestador.id, categoriaVeiculoId, placa: "TEST001", marca: "Teste", modelo: "Teste", ano: 2026 } });
     const corrida = await repository.criar(await dados());
     const aceite = { corridaId: corrida.id, usuarioId: prestador.usuarioId, veiculoId: veiculo.id };
     await expect(repository.aceitar(aceite)).rejects.toMatchObject({ statusCode: 403 });

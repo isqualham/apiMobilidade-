@@ -34,7 +34,7 @@
  *       "400":
  *         description: Telefone ausente ou inválido.
  *       "401":
- *         description: Token ausente, inválido ou expirado.
+ *         description: Token ausente, inválido, expirado, usuário inativo ou sessão revogada. Sessão substituída retorna Sua conta foi acessada em outro dispositivo.
  *       "403":
  *         description: Usuário inativo ou não encontrado.
  *       "500":

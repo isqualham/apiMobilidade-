@@ -15,6 +15,7 @@ export class PrismaVeiculoRepository implements VeiculoRepository {
     return prisma.veiculo.create({
       data: {
         prestadorId,
+        statusAprovacao: "PENDENTE",
         categoriaVeiculoId: dados.categoriaVeiculoId,
         placa: dados.placa,
         marca: dados.marca,

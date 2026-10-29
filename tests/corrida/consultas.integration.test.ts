@@ -58,7 +58,7 @@ const decodificar = (cursor: string) => JSON.parse(Buffer.from(cursor, "base64ur
 async function motorista(statusAprovacao: "APROVADO" | "PENDENTE" | "REJEITADO" = "APROVADO") {
   const entrada = await dados();
   const prestador = await banco.prestador.create({ data: { usuarioId: entrada.passageiroId, statusAprovacao } });
-  const veiculo = await banco.veiculo.create({ data: { prestadorId: prestador.id, categoriaVeiculoId, placa: String(contador), marca: "Teste", modelo: "Teste", ano: 2026 } });
+  const veiculo = await banco.veiculo.create({ data: { statusAprovacao: "APROVADO", prestadorId: prestador.id, categoriaVeiculoId, placa: String(contador), marca: "Teste", modelo: "Teste", ano: 2026 } });
   if (statusAprovacao === "APROVADO") await new PrismaDisponibilidadePrestadorRepository(banco).alterar(entrada.passageiroId, { status: "ONLINE", veiculoId: veiculo.id, versao: 0 });
   return { usuarioId: entrada.passageiroId, prestadorId: prestador.id, veiculoId: veiculo.id };
 }

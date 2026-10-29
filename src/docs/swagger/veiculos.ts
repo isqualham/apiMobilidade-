@@ -51,6 +51,11 @@
  *                         format: uri
  *                         nullable: true
  *                         example: https://exemplo.com/veiculos/corolla.jpg
+ *                       statusAprovacao:
+ *                         type: string
+ *                         enum: [PENDENTE, APROVADO, REJEITADO, SUSPENSO]
+ *                       versao:
+ *                         type: integer
  *                       ativo:
  *                         type: boolean
  *                         example: true
@@ -71,7 +76,7 @@
  *     tags:
  *       - Veículos
  *     summary: Cadastrar veículo do prestador
- *     description: Cadastra um veículo vinculado automaticamente ao prestador autenticado e aprovado. A categoria precisa estar ativa e pertencer a um tipo de veículo ativo. A imagem é informada por URL, sem upload de arquivo.
+ *     description: Cadastra um veículo vinculado automaticamente ao prestador autenticado e aprovado. A categoria precisa estar ativa e pertencer a um tipo de veículo ativo. Todo veículo inicia PENDENTE, independentemente de ativo. A imagem é opcional (omitida ou null); quando fornecida, deve ser URL HTTP/HTTPS. Campos de aprovação do cliente não são utilizados.
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -97,6 +102,7 @@
  *                 example: ABC1D23
  *               marca:
  *                 type: string
+ *                 maxLength: 80
  *                 example: Toyota
  *               modelo:
  *                 type: string
@@ -160,6 +166,11 @@
  *                       type: string
  *                       format: uri
  *                       nullable: true
+ *                     statusAprovacao:
+ *                       type: string
+ *                       enum: [PENDENTE, APROVADO, REJEITADO, SUSPENSO]
+ *                     versao:
+ *                       type: integer
  *                     ativo:
  *                       type: boolean
  *                     createdAt:

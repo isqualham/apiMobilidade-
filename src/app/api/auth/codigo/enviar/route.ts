@@ -1,38 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import twilio from "twilio";
 import { prisma } from "@/lib/prisma";
-import { verificarToken } from "@/modules/auth/TokenService";
+import { autenticarRequisicao, TokenInvalidoError } from "@/modules/auth/AutenticarRequisicao";
 
 export async function POST(request: NextRequest) {
   try {
-    const authorization = request.headers.get("authorization");
-    const token = authorization?.startsWith("Bearer ")
-      ? authorization.slice(7)
-      : null;
-
-    if (!token) {
-      return NextResponse.json(
-        { erro: "Usuário não autenticado." },
-        { status: 401 },
-      );
-    }
-
-    let usuarioId: string;
-
-    try {
-      const payload = await verificarToken(token);
-
-      if (typeof payload.sub !== "string" || !payload.sub) {
-        return NextResponse.json({ erro: "Token inválido." }, { status: 401 });
-      }
-
-      usuarioId = payload.sub;
-    } catch {
-      return NextResponse.json(
-        { erro: "Token inválido ou expirado." },
-        { status: 401 },
-      );
-    }
+    const { id: usuarioId } = await autenticarRequisicao(request);
 
     const usuario = await prisma.usuario.findUnique({
       where: { id: usuarioId },
@@ -104,6 +77,9 @@ export async function POST(request: NextRequest) {
       { status: 200 },
     );
   } catch (error) {
+    if (error instanceof TokenInvalidoError) {
+      return NextResponse.json({ erro: error.message }, { status: 401 });
+    }
     console.error("Erro ao solicitar código SMS:", error);
 
     return NextResponse.json(

@@ -31,10 +31,10 @@ export class PrismaDisponibilidadePrestadorRepository implements Disponibilidade
         if (dados.status === "ONLINE") {
           if (p.statusAprovacao !== "APROVADO") throw new PrestadorError("Prestador precisa estar aprovado para ficar Online.", 403);
           const veiculo = await tx.veiculo.findFirst({ where: {
-            id: veiculoId!, prestadorId: p.id, ativo: true,
+            id: veiculoId!, prestadorId: p.id, ativo: true, statusAprovacao: "APROVADO",
             categoriaVeiculo: { ativo: true, tipoVeiculo: { ativo: true } },
           }, select: { id: true } });
-          if (!veiculo) throw new PrestadorError("Selecione um veículo próprio, ativo e de categoria e tipo ativos.", 403);
+          if (!veiculo) throw new PrestadorError("Selecione um veículo próprio, aprovado, ativo e de categoria e tipo ativos.", 403);
         }
         if (p.veiculoOnlineId === veiculoId) return resposta(p);
         const alterados = await tx.prestador.updateMany({ where: { id: p.id, disponibilidadeVersao: dados.versao },

@@ -63,7 +63,9 @@
  *       Reutilização revoga toda a sessão, inclusive seus access tokens.
  *       Renovações concorrentes do mesmo token são tratadas como reutilização:
  *       no máximo uma vence e a sessão é revogada. O cliente deve serializar chamadas.
+ *       Mantém o mesmo sid; não substitui a sessão ao reabrir o aplicativo.
  *       Não altera corridas. Um novo login permite recuperar a corrida ativa.
+ *       Sessão revogada por novo login retorna 401 com erro "Sua conta foi acessada em outro dispositivo.".
  *     security: []
  *     requestBody:
  *       required: true
@@ -99,7 +101,9 @@
  *     description: |
  *       Não exige access token. Revoga a sessão inclusive se o refresh informado já foi
  *       rotacionado. Idempotente para tokens bem formados desconhecidos ou revogados.
- *       Não encerra corridas nem revoga outros logins do mesmo usuário.
+ *       Não encerra corridas. Logout de sessão já substituída não afeta a sessão atual.
+ *       Na primeira revogação da sessão, deixa o prestador Offline globalmente e incrementa
+ *       a versão da disponibilidade. Repetir logout já processado não altera disponibilidade.
  *     security: []
  *     requestBody:
  *       required: true

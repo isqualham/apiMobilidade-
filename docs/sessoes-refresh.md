@@ -4,7 +4,7 @@
 
 Todas as chamadas usam HTTPS em implantação. Nunca colocar tokens em URL ou logs.
 
-`POST /api/auth/login` mantém entrada `{ "email": "...", "senha": "..." }` e os campos de resposta `id`, `nome`, `email`, `administrador`, `prestador`, `statusAprovacao`, `telefoneVerificado`, `token`. Adiciona `refreshToken`. `token` continua sendo o access JWT (1 hora). Login bem-sucedido cria uma sessão independente e responde 200 com `Cache-Control: no-store`.
+`POST /api/auth/login` mantém entrada `{ "email": "...", "senha": "..." }` e os campos de resposta `id`, `nome`, `email`, `administrador`, `prestador`, `statusAprovacao`, `telefoneVerificado`, `token`. Adiciona `refreshToken`. `token` continua sendo o access JWT (1 hora). Login só cria sessão quando não existe outra válida; caso contrário retorna 409 com codigo SESSAO_ATIVA_EXISTENTE e responde 200 com `Cache-Control: no-store`.
 
 `POST /api/auth/refresh` não exige Bearer (o access pode estar expirado):
 
@@ -18,7 +18,7 @@ Todas as chamadas usam HTTPS em implantação. Nunca colocar tokens em URL ou lo
 { "token": "<novo JWT>", "refreshToken": "<novo token opaco>" }
 ```
 
-`POST /api/auth/logout` recebe o mesmo corpo e retorna 204 sem corpo. Revoga apenas a sessão correspondente, inclusive quando o token informado já foi rotacionado. Tokens bem formados desconhecidos/revogados também retornam 204 (idempotência).
+`POST /api/auth/logout` recebe o mesmo corpo e retorna 204 sem corpo. Revoga apenas a sessão correspondente, inclusive quando o token informado já foi rotacionado. Tokens bem formados desconhecidos/revogados também retornam 204 (idempotência). Na primeira revogação, o prestador fica Offline globalmente na mesma transação e a versão da disponibilidade é incrementada se havia seleção Online. Corridas são preservadas. Sessões substituídas não continuam autenticadas; repetir logout já processado não derruba uma nova seleção Online.
 
 Refresh/logout rejeitam campos extras (incluindo usuário/permissões). JSON ou formato inválido: 400. Refresh desconhecido, expirado, revogado, reutilizado ou de usuário inativo: 401, `{ "erro": "Refresh token inválido, expirado ou revogado." }`. Falha interna: 500 com mensagem genérica. Respostas de refresh/logout não são cacheáveis. Não há cookies ou dependência de access token nesses endpoints.
 
@@ -39,7 +39,7 @@ Migration versionada: `20261026010000_sessoes_refresh`.
 
 JWTs novos carregam `sid` (sessão) e `jti` (identificador de emissão). Rotas protegidas verificam a sessão e a identidade, além do JWT e do usuário ativo. Revogação invalida os access tokens novos da sessão. Permissões continuam consultadas no banco.
 
-JWTs legados sem `sid` continuam aceitos até sua expiração original (no máximo 1 hora após implantação). Não possuem sessão revogável nem refresh retroativo; requerem novo login.
+JWTs legados sem `sid` são recusados, pois não possuem sessão revogável. Exigem novo login.
 
 Nenhuma operação de sessão modifica corridas, tarifas, OSRM ou aprovação. Nova autenticação permite recuperar a corrida por `GET /api/corrida/ativa?papel=passageiro` ou `papel=prestador`.
 
@@ -77,3 +77,7 @@ Usar Node compatível com a versão instalada do Prisma (o Node 20.14 local é a
 - Alteração de senha não revoga automaticamente todas as sessões nesta tarefa.
 - Requisições já autorizadas antes da revogação podem terminar; revogar não interrompe trabalho em execução.
 - TLS, sigilo de JWT_SECRET e exclusão de corpos/headers sensíveis nos logs de proxy/APM continuam responsabilidades da implantação.
+
+## Sessão única
+
+A migration adicional `20261028020000_sessao_unica` registra o motivo de revogação e impõe uma sessão não revogada por usuário. Gerada, não aplicada nesta tarefa. Veja [sessão única e integração](sessao-unica.md) para concorrência, implantação e tratamento do 401 no App.

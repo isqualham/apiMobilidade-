@@ -21,7 +21,7 @@ it("consulta Offline e altera para Online usando versão e veículo elegível", 
   expect(await repo.consultar(id)).toEqual({ status: "OFFLINE", veiculoId: null, versao: 0 });
   expect(await repo.alterar(id, { status: "ONLINE", veiculoId: id, versao: 0 })).toEqual({ status: "ONLINE", veiculoId: id, versao: 1 });
   expect(banco.$transaction).toHaveBeenCalledWith(expect.any(Function), { isolationLevel: "Serializable" });
-  expect(tx.veiculo.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id, prestadorId: id, ativo: true, categoriaVeiculo: { ativo: true, tipoVeiculo: { ativo: true } } } }));
+  expect(tx.veiculo.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id, prestadorId: id, ativo: true, statusAprovacao: "APROVADO", categoriaVeiculo: { ativo: true, tipoVeiculo: { ativo: true } } } }));
   expect(tx.prestador.updateMany).toHaveBeenCalledWith({ where: { id, disponibilidadeVersao: 0 }, data: { veiculoOnlineId: id, disponibilidadeVersao: { increment: 1 } } });
 });
 it.each(["PENDENTE", "REJEITADO"])("recusa Online para %s", async status => {

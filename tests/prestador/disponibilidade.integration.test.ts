@@ -58,7 +58,7 @@ const consultas = new PrismaCorridaConsultaRepository(banco);
 async function motorista(statusAprovacao: "APROVADO" | "PENDENTE" | "REJEITADO" = "APROVADO") {
   const entrada = await dados();
   const prestador = await banco.prestador.create({ data: { usuarioId: entrada.passageiroId, statusAprovacao } });
-  const veiculo = await banco.veiculo.create({ data: { prestadorId: prestador.id, categoriaVeiculoId, placa: String(contador), marca: "Teste", modelo: "Teste", ano: 2026 } });
+  const veiculo = await banco.veiculo.create({ data: { statusAprovacao: "APROVADO", prestadorId: prestador.id, categoriaVeiculoId, placa: String(contador), marca: "Teste", modelo: "Teste", ano: 2026 } });
   if (statusAprovacao === "APROVADO") await new PrismaDisponibilidadePrestadorRepository(banco).alterar(entrada.passageiroId, { status: "ONLINE", veiculoId: veiculo.id, versao: 0 });
   return { usuarioId: entrada.passageiroId, prestadorId: prestador.id, veiculoId: veiculo.id };
 }
@@ -73,7 +73,7 @@ const disponibilidade = new PrismaDisponibilidadePrestadorRepository(banco);
 it("estado inicial Offline, seleção e versão compartilhada entre sessões", async () => {
   const entrada = await dados();
   const p = await banco.prestador.create({ data: { usuarioId: entrada.passageiroId, statusAprovacao: "APROVADO" } });
-  const v = await banco.veiculo.create({ data: { prestadorId: p.id, categoriaVeiculoId, placa: randomUUID().slice(0, 8), marca: "Teste", modelo: "Teste", ano: 2026 } });
+  const v = await banco.veiculo.create({ data: { statusAprovacao: "APROVADO", prestadorId: p.id, categoriaVeiculoId, placa: randomUUID().slice(0, 8), marca: "Teste", modelo: "Teste", ano: 2026 } });
   expect(await disponibilidade.consultar(p.usuarioId)).toEqual({ status: "OFFLINE", veiculoId: null, versao: 0 });
   await expect(consultas.disponiveis(p.usuarioId, { veiculoId: v.id, limite: 20 })).rejects.toMatchObject({ statusCode: 403 });
   const chamadas = await Promise.allSettled([
@@ -98,7 +98,7 @@ it("aceite concorrente com Offline nunca confirma corrida com prestador Offline"
 });
 it("troca de veículo concorrente com aceite mantém vínculo correto", async () => {
   const m = await motorista(); const c = await corrida();
-  const outro = await banco.veiculo.create({ data: { prestadorId: m.prestadorId, categoriaVeiculoId, placa: randomUUID().slice(0, 8), marca: "Teste", modelo: "Teste", ano: 2026 } });
+  const outro = await banco.veiculo.create({ data: { statusAprovacao: "APROVADO", prestadorId: m.prestadorId, categoriaVeiculoId, placa: randomUUID().slice(0, 8), marca: "Teste", modelo: "Teste", ano: 2026 } });
   const resultados = await Promise.allSettled([
     new PrismaCorridaRepository(banco).aceitar({ corridaId: c.id, usuarioId: m.usuarioId, veiculoId: m.veiculoId }),
     disponibilidade.alterar(m.usuarioId, { status: "ONLINE", veiculoId: outro.id, versao: 1 }),

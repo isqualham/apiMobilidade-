@@ -1,3 +1,4 @@
+import { diagnosticarOfertas } from "./DiagnosticoOfertas";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { CorridaError } from "./CorridaDTO";
@@ -75,25 +76,43 @@ export class PrismaCorridaConsultaRepository implements CorridaConsultaRepositor
         where: { usuarioId, statusAprovacao: "APROVADO", usuario: { ativo: true } },
         select: {
           id: true, veiculoOnlineId: true,
-          veiculos: {
-            where: { id: consulta.veiculoId, ativo: true, categoriaVeiculo: { ativo: true, tipoVeiculo: { ativo: true } } },
-            select: { categoriaVeiculoId: true }, take: 1,
-          },
           corridas: { where: { status: { in: STATUS_ATIVOS } }, select: { id: true }, take: 1 },
         },
       });
-      if (!prestador) throw new CorridaError("Somente prestadores ativos e aprovados podem consultar ofertas.", 403);
-      if (prestador.veiculoOnlineId !== consulta.veiculoId) throw new CorridaError("Fique Online com o veículo informado para consultar ofertas.", 403);
-      const veiculo = prestador.veiculos[0];
-      if (!veiculo) throw new CorridaError("Veículo próprio, ativo e de categoria ativa é obrigatório.", 403);
-      if (prestador.corridas.length) throw new CorridaError("Prestador já possui uma corrida ativa.", 409);
+      if (!prestador) {
+        diagnosticarOfertas("PRESTADOR_INELEGIVEL");
+        throw new CorridaError("Somente prestadores ativos e aprovados podem consultar ofertas.", 403);
+      }
+      if (!prestador.veiculoOnlineId || (consulta.veiculoId && prestador.veiculoOnlineId !== consulta.veiculoId)) {
+        diagnosticarOfertas(!prestador.veiculoOnlineId ? "OFFLINE" : "VEICULO_DIVERGENTE");
+        throw new CorridaError("Fique Online com o veículo informado para consultar ofertas.", 403);
+      }
+      const veiculo = await tx.veiculo.findFirst({
+        where: { id: prestador.veiculoOnlineId, prestadorId: prestador.id, ativo: true,
+          statusAprovacao: "APROVADO", categoriaVeiculo: { ativo: true, tipoVeiculo: { ativo: true } } },
+        select: { categoriaVeiculoId: true },
+      });
+      if (!veiculo) {
+        diagnosticarOfertas("VEICULO_INELEGIVEL");
+        throw new CorridaError("Veículo próprio, aprovado, ativo e de categoria ativa é obrigatório.", 403);
+      }
+      if (prestador.corridas.length) {
+        diagnosticarOfertas("CORRIDA_ATIVA");
+        throw new CorridaError("Prestador já possui uma corrida ativa.", 409);
+      }
       const linhas = await tx.corrida.findMany({
         where: { AND: [
           { status: "SOLICITADA", prestadorId: null, passageiroId: { not: usuarioId },
             passageiro: { ativo: true }, categoriaVeiculoId: veiculo.categoriaVeiculoId },
+          { recusas: { none: { prestadorId: prestador.id } } },
           aposCursor(consulta.cursor, "asc"),
         ] },
         select: ofertaSelect, orderBy: [{ createdAt: "asc" }, { id: "asc" }], take: consulta.limite + 1,
+      });
+      diagnosticarOfertas("CONSULTA_CONCLUIDA", {
+        quantidade: Math.min(linhas.length, consulta.limite),
+        cursorInformado: !!consulta.cursor, veiculoInformado: !!consulta.veiculoId,
+        temProximaPagina: linhas.length > consulta.limite,
       });
       const aproximar = (valor: Prisma.Decimal) => Math.round(Number(valor) * 100) / 100;
       return pagina(linhas, consulta.limite, (c) => ({

@@ -12,11 +12,11 @@ export interface RotasService {
     origem: CoordenadasRota;
     destino: CoordenadasRota;
     categoriaVeiculoId: string;
-  }): Promise<{ distanciaMetros: number }>;
+  }): Promise<{ distanciaMetros: number; duracaoSegundos?: number }>;
 }
 
 export class RotasServiceNaoConfigurado implements RotasService {
-  async calcularRota(): Promise<{ distanciaMetros: number }> {
+  async calcularRota(): Promise<{ distanciaMetros: number; duracaoSegundos?: number }> {
     throw new CorridaError(
       "Serviço de rotas não configurado. Não é possível calcular uma distância confiável.",
       503,

@@ -8,7 +8,7 @@ export type PapelCorrida = "todos" | "passageiro" | "prestador";
 export interface CursorCorrida { createdAt: string; id: string }
 export interface PaginaConsulta { limite: number; cursor?: CursorCorrida }
 export interface HistoricoConsulta extends PaginaConsulta { papel: PapelCorrida; status?: typeof STATUS_HISTORICO[number] }
-export interface OfertasConsulta extends PaginaConsulta { veiculoId: string }
+export interface OfertasConsulta extends PaginaConsulta { veiculoId?: string }
 export interface ResumoCorridaDTO {
   id: string; status: StatusCorrida; categoriaVeiculoId: string;
   distanciaKm: number; valorTotal: number; valorFinalCobrado: number | null; createdAt: string;
@@ -45,7 +45,7 @@ const pagina = {
   cursor: z.string().transform(decodificarCursor).optional(),
 };
 const papel = z.enum(["todos", "passageiro", "prestador"]).default("todos");
-export const ofertasSchema = z.strictObject({ ...pagina, veiculoId: z.uuid() });
+export const ofertasSchema = z.strictObject({ ...pagina, veiculoId: z.uuid().optional() });
 export const historicoSchema = z.strictObject({ ...pagina, papel, status: z.enum(STATUS_HISTORICO).optional() });
 export const ativaSchema = z.strictObject({ papel });
 export function validarConsulta<T>(schema: z.ZodType<T>, params: URLSearchParams): T {

@@ -10,6 +10,8 @@ export interface CadastrarVeiculoDTO {
 }
 
 export interface VeiculoResponseDTO {
+  statusAprovacao: "PENDENTE" | "APROVADO" | "REJEITADO" | "SUSPENSO";
+  versao: number;
   id: string;
   prestadorId: string;
   categoriaVeiculoId: string;

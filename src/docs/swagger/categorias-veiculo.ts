@@ -27,7 +27,7 @@
  *                         format: uuid
  *                       nome:
  *                         type: string
- *                         example: Econômico
+ *                         example: Carro Econômico
  *                       descricao:
  *                         type: string
  *                         nullable: true
@@ -71,7 +71,7 @@
  *               nome:
  *                 type: string
  *                 maxLength: 100
- *                 example: Conforto
+ *                 example: Carro Premium
  *               descricao:
  *                 type: string
  *                 nullable: true
@@ -108,7 +108,7 @@
  *                       format: uuid
  *                     nome:
  *                       type: string
- *                       example: Conforto
+ *                       example: Carro Premium
  *                     descricao:
  *                       type: string
  *                       nullable: true

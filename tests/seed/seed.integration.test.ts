@@ -82,6 +82,8 @@ it("seed idempotente não muda registros, não cria corridas e prepara login/ve�
     expect(lista.status).toBe(proprio ? 200 : 403);
     if (proprio) {
       expect((await lista.json()).veiculos).toHaveLength(1);
+      // Aprovação explícita da fixture; a seed permanece sem aprovar veículos.
+      await banco.veiculo.update({ where: { id: proprio.id }, data: { statusAprovacao: "APROVADO" } });
       await new PrismaDisponibilidadePrestadorRepository(banco).alterar(conta.id, { status: "ONLINE", veiculoId: proprio.id, versao: 0 });
       const disponiveis = await ofertas(new Request(`http://localhost/api/corrida/disponiveis?veiculoId=${proprio.id}`, { headers }));
       expect(disponiveis.status).toBe(200);
@@ -153,7 +155,7 @@ it("reutiliza aliases antigos, preserva IDs e não duplica ao padronizar nomes",
   await executarSeed(banco, { env, senha, categorias: {} });
   const resultado = await executarSeed(banco, { env, senha, categorias: {} });
   expect(await banco.categoriaVeiculo.count()).toBe(4);
-  expect((await banco.categoriaVeiculo.findUniqueOrThrow({ where: { id: categorias.moto } })).nome).toBe("ViaU Moto");
+  expect((await banco.categoriaVeiculo.findUniqueOrThrow({ where: { id: categorias.moto } })).nome).toBe("Moto");
   expect((await banco.veiculo.findUniqueOrThrow({ where: { id: veiculosSeed[0].id } })).categoriaVeiculoId).toBe(categorias.moto);
   expect(await banco.tarifaCategoria.findUnique({ where: { id: tarifa.id } })).toEqual(tarifa);
   expect(resultado.categorias.every(c => c.acao === "preservada")).toBe(true);
@@ -214,6 +216,7 @@ it("backend real persiste cálculo, aceita, inicia e finaliza com as categorias 
     const consulta = await ofertas(new Request("http://localhost/api/corrida/disponiveis?veiculoId=" + veiculosSeed[0].id));
     expect(consulta.status).toBe(401); // Preserva autenticação do endpoint.
     const aceite = { corridaId: corrida.id, usuarioId: contasSeed[2].id, veiculoId: veiculosSeed[0].id };
+    await banco.veiculo.update({ where: { id: aceite.veiculoId }, data: { statusAprovacao: "APROVADO" } });
     await new PrismaDisponibilidadePrestadorRepository(banco).alterar(aceite.usuarioId, { status: "ONLINE", veiculoId: aceite.veiculoId, versao: 0 });
     expect((await repo.aceitar(aceite)).status).toBe("ACEITA");
     expect((await repo.iniciar(aceite.corridaId, aceite.usuarioId)).status).toBe("EM_ANDAMENTO");

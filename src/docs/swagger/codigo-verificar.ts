@@ -58,7 +58,7 @@
  *                   type: string
  *                   example: Código inválido ou expirado.
  *       "401":
- *         description: Token ausente, inválido ou expirado.
+ *         description: Token ausente, inválido, expirado, usuário inativo ou sessão revogada. Sessão substituída retorna Sua conta foi acessada em outro dispositivo.
  *       "403":
  *         description: Usuário inativo.
  *       "500":

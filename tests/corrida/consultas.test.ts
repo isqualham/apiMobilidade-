@@ -18,11 +18,12 @@ it("decodifica cursor e limita paginação", () => {
   useCase.historico(id, new URLSearchParams({ cursor: codificarCursor(cursor), limite: "5", papel: "passageiro", status: "FINALIZADA" }));
   expect(repo.historico).toHaveBeenCalledWith(id, { cursor, limite: 5, papel: "passageiro", status: "FINALIZADA" });
 });
-it("usa defaults e exige veículo para ofertas", () => {
+it("usa defaults e permite omitir veículo nas ofertas", () => {
   const { repo, useCase } = dependencias();
   useCase.historico(id, new URLSearchParams());
   expect(repo.historico).toHaveBeenCalledWith(id, { limite: 20, papel: "todos" });
-  expect(() => useCase.disponiveis(id, new URLSearchParams())).toThrow();
+  useCase.disponiveis(id, new URLSearchParams());
+  expect(repo.disponiveis).toHaveBeenCalledWith(id, { limite: 20 });
   useCase.disponiveis(id, new URLSearchParams({ veiculoId: id }));
   expect(repo.disponiveis).toHaveBeenCalledWith(id, { limite: 20, veiculoId: id });
 });

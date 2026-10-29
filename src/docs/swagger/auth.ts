@@ -5,6 +5,11 @@
  *     tags:
  *       - Autenticação
  *     summary: Realizar login por e-mail ou telefone
+ *     description: |
+ *       Uma sessão válida existente bloqueia o login com 409, sem emitir tokens ou revogar a sessão.
+ *       A regra usa a conta por ID, seja login por e-mail ou telefone.
+ *       Após logout ou expiração da sessão, um novo login é permitido.
+ *       Reabrir o App deve reutilizar tokens/refresh, não executar login automaticamente.
  *     requestBody:
  *       required: true
  *       content:
@@ -45,6 +50,20 @@
  *         description: Credenciais inválidas.
  *       403:
  *         description: Usuário inativo.
+ *       409:
+ *         description: Conta já possui sessão ativa. Nenhum token emitido.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [codigo, erro]
+ *               properties:
+ *                 codigo:
+ *                   type: string
+ *                   enum: [SESSAO_ATIVA_EXISTENTE]
+ *                 erro:
+ *                   type: string
+ *                   example: Esta conta já está conectada em outro dispositivo. Saia do dispositivo atual para entrar aqui.
  *       500:
  *         description: Erro interno do servidor.
  *
@@ -59,7 +78,15 @@
  *       200:
  *         description: Dados do usuário autenticado.
  *       401:
- *         description: Token ausente ou inválido.
+ *         description: Sessão ausente, revogada, expirada ou token inválido. Sessão substituída recebe a mensagem indicada.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 erro:
+ *                   type: string
+ *                   example: Sua conta foi acessada em outro dispositivo.
  *       500:
  *         description: Erro interno do servidor.
  */

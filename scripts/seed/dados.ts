@@ -31,8 +31,8 @@ export const tarifasSeed = {
 };
 export type PerfilCategoria = keyof typeof tarifasSeed;
 export const categoriasSeed = [
-  { papel: "moto", nome: "ViaU Moto", aliases: ["Moto"], tipo: "Moto", id: idSeed(41), descricao: "Transporte de passageiros por motocicleta", ativo: true },
-  { papel: "economico", nome: "ViaU Econômico", aliases: ["Econômico", "Carro Econômico"], tipo: "Carro", id: idSeed(42), descricao: "Transporte acessível por automóveis", ativo: true },
-  { papel: "conforto", nome: "ViaU Conforto", aliases: ["Conforto"], tipo: "Carro", id: idSeed(43), descricao: "Automóveis com requisitos superiores de conforto", ativo: false },
-  { papel: "executivo", nome: "ViaU Executivo", aliases: ["Executivo"], tipo: "Carro", id: idSeed(44), descricao: "Automóveis de padrão superior", ativo: false },
+  { papel: "moto", nome: "Moto", aliases: ["ViaU Moto"], tipo: "Moto", id: idSeed(41), descricao: "Transporte de passageiros por motocicleta", ativo: true },
+  { papel: "economico", nome: "Carro Econômico", aliases: ["Econômico", "ViaU Econômico", "ViaU Carro Econômico"], tipo: "Carro", id: idSeed(42), descricao: "Transporte acessível por automóveis", ativo: true },
+  { papel: "conforto", nome: "Carro Premium", aliases: ["Conforto", "ViaU Conforto", "Premium", "ViaU Premium", "ViaU Carro Premium"], tipo: "Carro", id: idSeed(43), descricao: "Automóveis com requisitos superiores de conforto", ativo: false },
+  { papel: "executivo", nome: "Carro Porta-Malas Grande", aliases: ["Executivo", "ViaU Executivo", "Porta-Malas Grande", "ViaU Porta-Malas Grande", "ViaU Carro Porta-Malas Grande"], tipo: "Carro", id: idSeed(44), descricao: "Automóveis de padrão superior", ativo: false },
 ] as const;

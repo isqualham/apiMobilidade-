@@ -9,14 +9,17 @@ import { GET as ativa } from "@/app/api/corrida/ativa/route";
 import { GET as disponiveis } from "@/app/api/corrida/disponiveis/route";
 import { GET as detalhe } from "@/app/api/corrida/[id]/route";
 
-vi.mock("@/lib/prisma", () => ({ prisma: { usuario: { findUnique: vi.fn() } } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { sessaoAuth: { findFirst: vi.fn() }, usuario: { findUnique: vi.fn() } } }));
 const id = "00000000-0000-4000-8000-000000000001";
 const ctx = { params: Promise.resolve({ id }) };
 const rotas = [historico, ativa, disponiveis, (r: Request) => detalhe(r, ctx)];
 let bearer: string;
 beforeEach(async () => {
+  vi.mocked(prisma.sessaoAuth.findFirst).mockResolvedValue({
+    revogadaEm: null, motivoRevogacao: null, expiraEm: new Date(Date.now() + 86400000),
+  } as never);
   vi.stubEnv("JWT_SECRET", randomBytes(32).toString("hex"));
-  bearer = await gerarToken({ sub: id, nome: "Teste", email: "x@test.invalid", administrador: true });
+  bearer = await gerarToken({ sid: "00000000-0000-4000-8000-000000000099", sub: id, nome: "Teste", email: "x@test.invalid", administrador: true });
   vi.mocked(prisma.usuario.findUnique).mockReset().mockResolvedValue({ id, ativo: true, administrador: false, prestador: null } as never);
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });

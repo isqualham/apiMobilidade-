@@ -1,3 +1,4 @@
+import { SessaoAtivaError } from "@/modules/auth/SessaoDTO";
 import { headersSessao } from "@/modules/auth/SessaoHttp";
 import { NextResponse } from "next/server";
 import { loginUsuarioSchema } from "@/modules/usuario/LoginUsuarioDTO";
@@ -26,6 +27,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(resultado, { status: 200, headers: headersSessao });
   } catch (erro: unknown) {
+    if (erro instanceof SessaoAtivaError) {
+      return NextResponse.json({ codigo: erro.codigo, erro: erro.message }, { status: 409, headers: headersSessao });
+    }
     if (erro instanceof CredenciaisInvalidasError) {
       return NextResponse.json({ erro: erro.message }, { status: 401 });
     }

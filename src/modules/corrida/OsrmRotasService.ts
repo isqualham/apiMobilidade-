@@ -7,7 +7,7 @@ const respostaRota = z.object({
   code: z.literal("Ok"),
   routes: z.array(z.object({
     distance: z.number().finite().positive().max(9999999999),
-    duration: z.number().finite().nonnegative(),
+    duration: z.number().finite().nonnegative().optional(),
   })).min(1),
 });
 
@@ -47,7 +47,7 @@ export class OsrmRotasService implements RotasService {
     private readonly solicitar: typeof fetch = fetch,
   ) {}
 
-  async calcularRota(entrada: Parameters<RotasService["calcularRota"]>[0]): Promise<{ distanciaMetros: number }> {
+  async calcularRota(entrada: Parameters<RotasService["calcularRota"]>[0]): Promise<{ distanciaMetros: number; duracaoSegundos?: number }> {
     for (const ponto of [entrada.origem, entrada.destino]) {
       validarCoordenada(ponto.latitude, "Latitude", 90);
       validarCoordenada(ponto.longitude, "Longitude", 180);
@@ -98,7 +98,7 @@ export class OsrmRotasService implements RotasService {
       // OSRM fornece metros fracionários; normalizar ao metro mais próximo para Decimal(10,3).
       const distanciaMetros = Math.round(validado.data.routes[0].distance);
       if (distanciaMetros <= 0) throw new CorridaError("Distância da rota insuficiente.", 422);
-      return { distanciaMetros };
+      return { distanciaMetros, ...(validado.data.routes[0].duration !== undefined ? { duracaoSegundos: validado.data.routes[0].duration } : {}) };
     } catch (erro) {
       if (erro instanceof CorridaError) throw erro;
       if (controller.signal.aborted) throw new CorridaError("Tempo limite ao consultar o serviço de rotas.", 504);

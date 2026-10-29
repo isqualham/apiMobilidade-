@@ -1,6 +1,6 @@
 # Disponibilidade do prestador
 
-Disponibilidade é uma decisão do prestador, compartilhada por todas as sessões autenticadas da conta. Não representa conexão de rede, GPS ou presença confirmada. Logout, expiração de JWT e desconexão não alteram automaticamente esse estado; a autenticação continua obrigatória para consultar ofertas ou aceitar corridas.
+Disponibilidade é uma decisão do prestador, compartilhada por todas as sessões autenticadas da conta. Não representa conexão de rede, GPS ou presença confirmada. Logout confirmado coloca a conta Offline na primeira revogação da sessão, sem alterar corridas. Expiração de JWT e desconexão não alteram automaticamente esse estado; a autenticação continua obrigatória para consultar ofertas ou aceitar corridas.
 
 ## Contrato
 
@@ -36,7 +36,7 @@ A resposta traz `veiculoId: null` e a nova versão. IDs de usuário/prestador e 
 
 - Todos os prestadores existentes começam Offline quando a migration for aplicada; a seed não os coloca Online.
 - Consultar o estado exige cadastro de prestador e usuário ativo. Prestadores pendentes/rejeitados podem consultar e ficar Offline, mas não ficar Online.
-- Online exige APROVADO e veículo próprio ativo, categoria ativa e tipo ativo. Não existe homologação adicional por modelo/ano.
+- Online exige prestador APROVADO e veículo próprio APROVADO e ativo, categoria ativa e tipo ativo. Não existe homologação adicional por modelo/ano.
 - Qualquer PATCH é bloqueado durante corrida SOLICITADA, ACEITA, PRESTADOR_A_CAMINHO ou EM_ANDAMENTO vinculada ao usuário como passageiro ou prestador, inclusive repetição do estado atual. Não é possível trocar de veículo ou ficar Offline durante a viagem.
 - Sem corrida ativa, repetir estado/veículo com a versão atual é idempotente e não altera a versão.
 - Troca de veículo é atômica e incrementa a versão. Cada sessão deve consultar e utilizar a versão atual. Requisição com versão antiga recebe 409, sem sobrescrever a escolha de outra sessão.
@@ -57,3 +57,7 @@ Migration versionada: `prisma/migrations/20261027010000_disponibilidade_prestado
 A migration **não foi executada**. O código depende dessas colunas: não disponibilizar esta versão contra um banco sem a migration. O Prisma Client foi gerado localmente; geração não aplica migrations.
 
 Os testes unitários cobrem validação, autorização JWT, idempotência, seleção, bloqueio por corrida, versões e tratamento de conflitos. Os testes PostgreSQL de concorrência e regressão foram preparados/atualizados, mas não executados nesta tarefa, pois sua preparação aplica migrations, ação expressamente não autorizada.
+
+A aprovação individual dos veículos adiciona revogação administrativa da seleção Online, inclusive durante corrida sem cancelar a viagem. Consulte [aprovação de veículos](aprovacao-veiculos.md).
+
+Consulte [o contrato de distribuição e integração do App](disponibilidade-distribuicao-app.md) para categorias disponíveis, veículo opcional nas ofertas e recuperação após logout.

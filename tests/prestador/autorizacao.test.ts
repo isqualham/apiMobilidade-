@@ -10,7 +10,7 @@ import { PrestadorError } from "@/modules/prestador/AtualizarAprovacaoPrestadorD
 import { PATCH } from "@/app/api/prestadores/[id]/aprovacao/route";
 import { POST as aceitar } from "@/app/api/corrida/[id]/aceitar/route";
 
-vi.mock("@/lib/prisma", () => ({ prisma: { usuario: { findUnique: vi.fn() } } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { sessaoAuth: { findFirst: vi.fn() }, usuario: { findUnique: vi.fn() } } }));
 const id = "00000000-0000-4000-8000-000000000001";
 const adminId = "00000000-0000-4000-8000-000000000002";
 const contexto = { params: Promise.resolve({ id }) };
@@ -18,6 +18,9 @@ const usuario = { id: adminId, nome: "Teste", email: "teste@test.invalid", ativo
 let decidir: MockInstance<PrismaPrestadorRepository["decidirAprovacao"]>;
 
 beforeEach(() => {
+  vi.mocked(prisma.sessaoAuth.findFirst).mockResolvedValue({
+    revogadaEm: null, motivoRevogacao: null, expiraEm: new Date(Date.now() + 86400000),
+  } as never);
   vi.stubEnv("JWT_SECRET", randomBytes(32).toString("hex"));
   vi.mocked(prisma.usuario.findUnique).mockReset().mockResolvedValue(usuario as never);
   decidir = vi.spyOn(PrismaPrestadorRepository.prototype, "decidirAprovacao").mockResolvedValue({
@@ -27,7 +30,7 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
 async function token(administrador = true) {
-  return gerarToken({ sub: adminId, nome: "Teste", email: "teste@test.invalid", administrador });
+  return gerarToken({ sid: "00000000-0000-4000-8000-000000000099", sub: adminId, nome: "Teste", email: "teste@test.invalid", administrador });
 }
 function request(bearer?: string, corpo = JSON.stringify({ statusAprovacao: "APROVADO" })) {
   return new Request("http://localhost/api/prestadores/id/aprovacao", {

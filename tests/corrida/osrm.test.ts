@@ -70,7 +70,7 @@ describe("Configuração OSRM", () => {
 describe("Adaptador OSRM sem chamadas ao servidor público", () => {
   it("envia longitude/latitude, preserva prefixo, identifica ViaU e normaliza metros", async () => {
     const { service, fetchMock } = adaptador();
-    await expect(service.calcularRota(entrada)).resolves.toEqual({ distanciaMetros: 1005 });
+    await expect(service.calcularRota(entrada)).resolves.toEqual({ distanciaMetros: 1005, duracaoSegundos: 200 });
     const [url, opcoes] = fetchMock.mock.calls[0];
     expect(String(url)).toContain("/prefixo/route/v1/driving/-57.67,-16.07;-57.69,-16.08?");
     expect(String(url)).toContain("overview=false");
@@ -80,7 +80,7 @@ describe("Adaptador OSRM sem chamadas ao servidor público", () => {
     const { service } = adaptador(vi.fn<typeof fetch>().mockResolvedValue(Response.json({ code: "Ok", routes: [{ distance, duration: 1 }] })));
     await expect(service.calcularRota(entrada)).rejects.toMatchObject({ statusCode: 502 });
   });
-  it.each([{}, { code: "Ok", routes: [] }, { code: "Ok", routes: [{ distance: 100 }] }, { code: "InvalidQuery" }])("valida formato %j", async (body) => {
+  it.each([{}, { code: "Ok", routes: [] }, { code: "Ok", routes: [{ distance: "100" }] }, { code: "InvalidQuery" }])("valida formato %j", async (body) => {
     const { service } = adaptador(vi.fn<typeof fetch>().mockResolvedValue(Response.json(body)));
     await expect(service.calcularRota(entrada)).rejects.toMatchObject({ statusCode: 502 });
   });
@@ -174,7 +174,7 @@ describe("Limites de uso", () => {
     await vi.advanceTimersByTimeAsync(59000);
     await expect(service.calcularRota(entrada)).rejects.toMatchObject({ statusCode: 429 });
     await vi.advanceTimersByTimeAsync(1000);
-    await expect(service.calcularRota(entrada)).resolves.toEqual({ distanciaMetros: 1005 });
+    await expect(service.calcularRota(entrada)).resolves.toEqual({ distanciaMetros: 1005, duracaoSegundos: 200 });
   });
   it("limita público a uma chamada por segundo, inclusive entre adaptadores", async () => {
     vi.setSystemTime(new Date("2030-01-01"));
@@ -184,7 +184,7 @@ describe("Limites de uso", () => {
     await expect(b.service.calcularRota(entrada)).rejects.toMatchObject({ statusCode: 429 });
     expect(b.fetchMock).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1000);
-    await expect(b.service.calcularRota(entrada)).resolves.toEqual({ distanciaMetros: 1005 });
+    await expect(b.service.calcularRota(entrada)).resolves.toEqual({ distanciaMetros: 1005, duracaoSegundos: 200 });
   });
   it.each(["120", new Date("2031-01-01T00:02:00Z").toUTCString()])("respeita Retry-After %s", async (retryAfter) => {
     vi.setSystemTime(new Date("2031-01-01"));
@@ -197,6 +197,15 @@ describe("Limites de uso", () => {
     await expect(service.calcularRota(entrada)).rejects.toMatchObject({ statusCode: 429 });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(1000);
-    await expect(service.calcularRota(entrada)).resolves.toEqual({ distanciaMetros: 1005 });
+    await expect(service.calcularRota(entrada)).resolves.toEqual({ distanciaMetros: 1005, duracaoSegundos: 200 });
   });
+});
+
+it("OSRM sem duração ainda fornece distância real, sem inventar duração", async () => {
+  const { service } = adaptador(vi.fn<typeof fetch>().mockResolvedValue(Response.json({ code: "Ok", routes: [{ distance: 1005.4 }] })));
+  expect(await service.calcularRota(entrada)).toEqual({ distanciaMetros: 1005 });
+});
+it.each([-1, "200", null])("OSRM rejeita duração presente inválida: %s", async duration => {
+  const { service } = adaptador(vi.fn<typeof fetch>().mockResolvedValue(Response.json({ code: "Ok", routes: [{ distance: 1005.4, duration }] })));
+  await expect(service.calcularRota(entrada)).rejects.toMatchObject({ statusCode: 502 });
 });

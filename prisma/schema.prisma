@@ -19,6 +19,15 @@ enum StatusAprovacao {
   @@map("status_aprovacao")
 }
 
+enum StatusAprovacaoVeiculo {
+  PENDENTE
+  APROVADO
+  REJEITADO
+  SUSPENSO
+
+  @@map("status_aprovacao_veiculo")
+}
+
 enum StatusCorrida {
   SOLICITADA
   ACEITA
@@ -60,6 +69,7 @@ model Usuario {
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  auditoriasVeiculos AuditoriaVeiculo[]
   sessoes                    SessaoAuth[]
   prestador                  Prestador?
   aceitesTermosUso           AceiteTermoUso[]
@@ -88,6 +98,7 @@ model Prestador {
 
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
+  recusas RecusaOferta[]
   veiculos Veiculo[]
   corridas Corrida[] @relation("CorridasPrestador")
 
@@ -184,7 +195,7 @@ model TipoVeiculo {
 
 // ======================================================
 // CATEGORIAS DE VEÍCULO
-// Exemplos: ViaU Moto, Econômico, Conforto, Executivo
+// Exemplos: Moto, Carro Econômico, Carro Premium, Carro Porta-Malas Grande
 // ======================================================
 
 model CategoriaVeiculo {
@@ -232,6 +243,9 @@ model TarifaCategoria {
 // ======================================================
 
 model Veiculo {
+  statusAprovacao StatusAprovacaoVeiculo @default(PENDENTE) @map("status_aprovacao")
+  versao Int @default(0)
+  auditoria AuditoriaVeiculo[]
   prestadoresOnline Prestador[] @relation("VeiculoOnline")
   id                 String @id @default(uuid()) @db.Uuid
   prestadorId        String @map("prestador_id") @db.Uuid
@@ -255,6 +269,7 @@ model Veiculo {
 
   corridas Corrida[]
 
+  @@index([statusAprovacao, createdAt, id])
   @@index([prestadorId])
   @@index([categoriaVeiculoId])
   @@map("veiculo")
@@ -305,6 +320,7 @@ model Corrida {
   veiculo          Veiculo?         @relation(fields: [veiculoId], references: [id], onDelete: Restrict)
   categoriaVeiculo CategoriaVeiculo @relation(fields: [categoriaVeiculoId], references: [id], onDelete: Restrict)
 
+  recusas RecusaOferta[]
   cancelamentos CancelamentoCorrida[]
   localizacoes  LocalizacaoCorrida[]
 
@@ -367,12 +383,13 @@ model LocalizacaoCorrida {
   @@map("localizacao_corrida")
 }
 
-// Uma sessão por login/dispositivo. Tokens antigos permanecem para detectar replay.
+// Uma sessão não revogada por usuário (índice parcial na migration). Tokens antigos detectam replay.
 model SessaoAuth {
   id String @id @default(uuid()) @db.Uuid
   usuarioId String @map("usuario_id") @db.Uuid
   expiraEm DateTime @map("expira_em") @db.Timestamptz(3)
   revogadaEm DateTime? @map("revogada_em") @db.Timestamptz(3)
+  motivoRevogacao String? @map("motivo_revogacao") @db.VarChar(32)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
@@ -393,4 +410,35 @@ model RefreshToken {
 
   @@index([sessaoId])
   @@map("refresh_token")
+}
+
+// Histórico imutável via API: decisões administrativas e mudanças cadastrais.
+model AuditoriaVeiculo {
+  id String @id @default(uuid()) @db.Uuid
+  veiculoId String @map("veiculo_id") @db.Uuid
+  autorId String @map("autor_id") @db.Uuid
+  acao String @db.VarChar(30)
+  statusAnterior StatusAprovacaoVeiculo @map("status_anterior")
+  statusNovo StatusAprovacaoVeiculo @map("status_novo")
+  motivo String @db.VarChar(1000)
+  versao Int
+  dados Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  veiculo Veiculo @relation(fields: [veiculoId], references: [id], onDelete: Restrict)
+  autor Usuario @relation(fields: [autorId], references: [id], onDelete: Restrict)
+
+  @@index([veiculoId, createdAt, id])
+  @@map("auditoria_veiculo")
+}
+
+model RecusaOferta {
+  prestadorId String @map("prestador_id") @db.Uuid
+  corridaId String @map("corrida_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  prestador Prestador @relation(fields: [prestadorId], references: [id], onDelete: Restrict)
+  corrida Corrida @relation(fields: [corridaId], references: [id], onDelete: Restrict)
+
+  @@id([prestadorId, corridaId])
+  @@index([corridaId])
+  @@map("recusa_oferta")
 }

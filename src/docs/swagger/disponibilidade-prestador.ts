@@ -47,7 +47,7 @@
  *   get:
  *     tags: [Prestadores]
  *     summary: Consultar disponibilidade declarada do prestador autenticado
- *     description: Estado compartilhado entre sessões. Não indica presença de rede ou elegibilidade atual. Aprovação e atividade são revalidadas nas operações. Resposta sem cache.
+ *     description: Estado compartilhado entre sessões. Logout confirmado coloca a conta Offline sem cancelar corridas; expiração e desconexão não alteram o estado. Não indica presença de rede ou elegibilidade atual. Aprovação e atividade são revalidadas nas operações. Resposta sem cache.
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -66,7 +66,7 @@
  *   patch:
  *     tags: [Prestadores]
  *     summary: Alterar disponibilidade ou veículo selecionado
- *     description: Exige a versao retornada pelo GET. ONLINE exige aprovação e veículo próprio ativo com categoria e tipo ativos. OFFLINE remove a seleção. Corrida ativa como prestador ou passageiro bloqueia qualquer PATCH, inclusive repetição. Sem corrida, repetir o estado com versão atual não incrementa a versão. Sessões concorrentes devem consultar novamente após 409. Não altera corridas, login ou sessões.
+ *     description: Exige a versao retornada pelo GET. ONLINE exige aprovação e veículo próprio APROVADO e ativo com categoria e tipo ativos. OFFLINE remove a seleção. Corrida ativa como prestador ou passageiro bloqueia qualquer PATCH, inclusive repetição. Sem corrida, repetir o estado com versão atual não incrementa a versão. Sessões concorrentes devem consultar novamente após 409. Não altera corridas, login ou sessões.
  *     security:
  *       - bearerAuth: []
  *     requestBody:
